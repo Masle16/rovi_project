@@ -1,3 +1,0 @@
-/home/mathi/Documents/rovi_project/build/CMakeFiles/rebuild_cache.dir
-/home/mathi/Documents/rovi_project/build/CMakeFiles/rovi_project.dir
-/home/mathi/Documents/rovi_project/build/CMakeFiles/edit_cache.dir
