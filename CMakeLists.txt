@@ -31,7 +31,8 @@ LINK_DIRECTORIES( ${ROBWORK_LIBRARY_DIRS} )
 
 # Add the source files to build
 SET(SrcFiles
-    src/main.cpp)
+    src/main.cpp
+    src/ReachabilityAnalysis.hpp)
 
 # The shared library to build:
 ADD_EXECUTABLE(rovi_project ${SrcFiles})

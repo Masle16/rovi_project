@@ -9,11 +9,12 @@
 
 	<Frame name="URReference" refframe="Table" type="Movable">
 		<!-- <RPY>0 0 0</RPY> <Pos>0 0 0.11</Pos> -->
-		<RPY>0 0 0</RPY> <Pos>0 0 0.11</Pos>
+		<RPY>0 0 0</RPY> <Pos>0.1 -0.35 0.11</Pos>
 	</Frame>
 	<Include file="UR5/UR-6-85-5-A/Device.wc.xml" />
 
 	<!--insert gripper definition-->
+
 	<Frame name="Tool" refframe="UR-6-85-5-A.TCP">
 		<RPY>0 0 0</RPY> <Pos>0 0 0.072</Pos>
 	</Frame>
@@ -23,7 +24,7 @@
 		<RPY>0 0 0</RPY> <Pos>0 0 0.15</Pos>
 	</Frame>
 		
-	<Frame name="Bottle" refframe="Table"  type="Movable" daf="true" >
+	<!-- <Frame name="Bottle" refframe="Table"  type="Movable" daf="true" >
 		<RPY> -90 0 90 </RPY> <Pos> 0 0.474 0.21 </Pos>
 		<Drawable name="Bottle" refframe="Bottle">
 			<Polytope file="parts/bottle" />
@@ -35,18 +36,39 @@
 		<Drawable name="Square" refframe="Square">
 			<Polytope file="parts/square" />
 		</Drawable>
-	</Frame>
+	</Frame> -->
 
-	<Frame name="Cylinder" refframe="Table"  type="Movable" daf="true" >
-		<!-- <RPY> -90 0 90 </RPY> <Pos> -0.25 0.474 0.150 </Pos> -->
-		<RPY> 0 0 0 </RPY> <Pos> -0.25 0.474 0.150 </Pos>
-		<Drawable name="Cylinder" refframe="Cylinder">
+	<Frame name="Cylinder1" refframe="Table"  type="Movable" daf="true" >
+		<RPY> -90 0 180 </RPY> <Pos> 0 0.474 0.15 </Pos>
+		<Drawable name="Cylinder1" refframe="Cylinder1">
 			<Polytope file="parts/cylinder" />
 		</Drawable>
 	</Frame>
 
-	<Frame name="GraspTarget" refframe="Cylinder" type="Fixed">
-		<RPY>0 0 90</RPY> <Pos>0 0 0</Pos>
+	<Frame name="Cylinder2" refframe="Table"  type="Movable" daf="true" >
+		<RPY> -90 0 180 </RPY> <Pos> 0.25 0.474 0.150</Pos>
+		<Drawable name="Cylinder2" refframe="Cylinder2">
+			<Polytope file="parts/cylinder" />
+		</Drawable>
+	</Frame>
+
+	<Frame name="Cylinder3" refframe="Table"  type="Movable" daf="true" >
+		<RPY> -90 0 180 </RPY> <Pos> -0.25 0.474 0.150 </Pos>
+		<Drawable name="Cylinder3" refframe="Cylinder3">
+			<Polytope file="parts/cylinder" />
+		</Drawable>
+	</Frame>
+
+	<Frame name="GraspTarget1" refframe="Cylinder1" type="Movable">
+		<RPY> 0 0 -90 </RPY> <Pos> 0 0 0 </Pos>
+	</Frame>
+	
+	<Frame name="GraspTarget2" refframe="Cylinder2" type="Movable">
+		<RPY> 0 0 -90 </RPY> <Pos> 0 0 0 </Pos>
+	</Frame>
+	
+	<Frame name="GraspTarget3" refframe="Cylinder3" type="Movable">
+		<RPY> 0 0 -90 </RPY> <Pos> 0 0 0 </Pos>
 	</Frame>
 
 	<!-- Cameras -->
