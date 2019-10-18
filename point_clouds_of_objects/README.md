@@ -1,8 +1,8 @@
 # Point Clouds of Different Objects
 
-This folder contains point clouds of the different objects, which is located in the RobWorkStudio scene. Furthermore, the .ply file, which are created when converting to .pcd, is stored also. 
+This folder contains point clouds of the different objects, which is located in the RobWorkStudio [scene](rovi_project/Project_WorkCell/scene.wc.xml). Furthermore, the .ply file, which are created when converting to .pcd, is stored also. 
 
-The .stl files of the parts are located at [parts location](Project_WorkCell/parts/).
+The .stl files of the parts are located at [parts location](rovi_project/Project_WorkCell/parts/).
 
 ## Converting the .stl file into PCDs
 
