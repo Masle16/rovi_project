@@ -1,0 +1,31 @@
+wc = rws.getRobWorkStudio():getWorkCell()
+state = wc:getDefaultState()
+device = wc:findDevice("UR-6-85-5-A")
+gripper = wc:findFrame("Tool")
+bottle = wc:findFrame("Cylinder")
+table = wc:findFrame("Table")
+
+function setQ(q)
+qq = rw.Q(#q,q[1],q[2],q[3],q[4],q[5],q[6])
+device:setQ(qq,state)
+rws.getRobWorkStudio():setState(state)
+rw.sleep(0.1)
+end
+
+function attach(obj, tool)
+rw.gripFrame(obj, tool, state)
+rws.getRobWorkStudio():setState(state)
+rw.sleep(0.1)
+end
+
+setQ({1.693 , -1.728 , -2.068 , -0.932 , 1.571 , 0})
+attach(bottle, gripper)
+setQ({1.61288 , -1.53337 , -1.90001 , -1.27929 , 1.42604 , 0.189344})
+setQ({1.19106 , -1.59101 , -1.71827 , -1.27756 , 1.39935 , 0.136303})
+setQ({0.739142 , -1.65276 , -1.52357 , -1.27569 , 1.37075 , 0.0794775})
+setQ({0.287227 , -1.71451 , -1.32887 , -1.27383 , 1.34215 , 0.0226523})
+setQ({-0.164689 , -1.77626 , -1.13417 , -1.27197 , 1.31355 , -0.0341729})
+setQ({-0.616605 , -1.83801 , -0.939469 , -1.2701 , 1.28495 , -0.0909981})
+setQ({-0.750785 , -1.79705 , -1.24431 , -1.0074 , 1.4521 , -0.292078})
+setQ({-0.85769 , -1.83699 , -1.66678 , -0.810447 , 1.44479 , -0.151869})
+setQ({-1.154 , -1.798 , -1.993 , -0.934 , 1.571 , 0})

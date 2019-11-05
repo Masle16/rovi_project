@@ -10,17 +10,28 @@ USE_ROBWORK_NAMESPACE
 using namespace robwork;
 
 /**
+ * @brief showUsages
+ */
+void showUsages() {
+    std::cerr << "-cylinder_x -cylinder_y -cylinder_z -position_stepsize -data_file" << std::endl;
+    std::cerr << "0.0 0.56 0.15 0.1 /path/to/data/file.txt" << std::endl;
+}
+
+/**
  * @brief save2file: saves the position of the robot base with the corresponding collision free solutions
  * @param x: the x position on the table
  * @param y: the y position on the table
  * @param solutions: the number of collision free solutions at (x, y)
  */
-void save2file(const std::vector<float> &x, const std::vector<float> &y, const std::vector<unsigned int> &solutions) {
+void save2file(const std::vector<float> &x,
+               const std::vector<float> &y,
+               const std::vector<unsigned int> &solutions,
+               const std::string &file_path) {
     // check if vectors have the same length
     if (x.size() != y.size() && y.size() != solutions.size()) { return; }
 
     // write to file
-    std::string file_path = "../data.txt";
+    //std::string file_path = "../data_cylinder_top.txt";
     std::ofstream my_file;
     my_file.open(file_path);
     for (unsigned int i = 0; i < x.size(); i++) {
@@ -33,12 +44,12 @@ void save2file(const std::vector<float> &x, const std::vector<float> &y, const s
 
 /**
  * The function was given in lecture 5 of robotics in the exercise.
- * @brief getConfigurations: gets all the configurations of the solved inverse kinematics
- * @param nameGoal: name of the object to reach
- * @param nameTcp: the tool center point of the tool
- * @param robot: the device
- * @param wc: the workcell
- * @param state: the state of the workcell
+ * @brief gets all the configurations of the solved inverse kinematics
+ * @param nameGoal  :   name of the object to reach
+ * @param nameTcp   :   the tool center point of the tool
+ * @param robot     :   the device
+ * @param wc        :   the workcell
+ * @param state     :   the state of the workcell
  * @return all the configurations of the solved inverse kinematics
  */
 std::vector<rw::math::Q> getConfigurations(const std::string nameGoal,
@@ -135,7 +146,33 @@ std::vector<rw::math::Q> getCollisionFreeSolutions(rw::models::WorkCell::Ptr wc,
 /**
  * MAIN FUNCTION
  */
-int main() {
+int main(int argc, char *argv[]) {
+    rw::math::Vector3D<> cylinder_pos;
+    double stepsize;
+    std::string file_path;
+
+    if (argc < 5) {
+        showUsages();
+        return 0;
+    }
+    else if ((std::string(argv[0]) == "-h") || (std::string(argv[0]) == "--help")) {
+        showUsages();
+        return 0;
+    }
+    else {
+        cylinder_pos = rw::math::Vector3D<>(std::stod(argv[1]),
+                                            std::stod(argv[2]),
+                                            std::stod(argv[3]));
+        std::cout << "Cylinder position: " << cylinder_pos << std::endl;
+
+        stepsize = std::stod(argv[4]);
+        std::cout << "Robot base stepsize: " << stepsize << std::endl;
+
+        file_path = argv[5];
+        std::cout << "File path: " << file_path << std::endl;
+    }
+
+
     // load workcell
     const std::string wc_file = "../../Project_WorkCell/Scene.wc.xml";
     rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(wc_file);
@@ -175,8 +212,8 @@ int main() {
 
     // generate position for reachability analysis
     std::vector<rw::math::Vector3D<>> base_positions;
-    for (float y = 0.2; y >= -0.5; y -= 0.02) { // y goes from 0.2 to -0.5
-        for (float x = -0.3; x <= 0.3; x += 0.02) { // x goes from -0.3 to 0.3
+    for (float y = 0.2; y >= -0.5; y -= stepsize) { // y goes from 0.2 to -0.5
+        for (float x = -0.3; x <= 0.3; x += stepsize) { // x goes from -0.3 to 0.3
             // check for goal position
             if (y < -0.3 && x > 0.1) { continue; }
             rw::math::Vector3D<> pos(x, y, 0.0);
@@ -185,17 +222,18 @@ int main() {
     }
     std::cout << "Number of positions to analyse => " << base_positions.size() << std::endl;
 
-    // create vector with cylinder positions
-    std::vector<rw::math::Vector3D<>> cylinder_positions = {
-        rw::math::Vector3D<>(-0.36, 0.474, 0.15),
-        rw::math::Vector3D<>(0.0, 0.474, 0.15),
-        rw::math::Vector3D<>(0.36, 0.474, 0.15),
-        rw::math::Vector3D<>(0.3, -0.5, 0.15)
-    };
+//    // create vector with cylinder positions
+//    std::vector<rw::math::Vector3D<>> cylinder_positions = {
+//        rw::math::Vector3D<>(-0.36, 0.56, 0.15),
+//        rw::math::Vector3D<>(0.0, 0.56, 0.15),
+//        rw::math::Vector3D<>(0.36, 0.56, 0.15),
+//        rw::math::Vector3D<>(0.3, -0.5, 0.15)
+//    };
 
     // check for every base position the collision free solution to each cylinder position
     std::vector<unsigned int> number_of_solutions;
     std::vector<float> x_positions, y_positions;
+    std::string rwplay = "";
     for (unsigned int i = 0; i < base_positions.size(); i++) {
         // move base frame
         rw::math::Transform3D<> base_trans(base_positions[i], base_rot);
@@ -203,37 +241,48 @@ int main() {
 
         // get collision free solutions
         unsigned int solutions = 0;
-        for (unsigned int j = 0; j < cylinder_positions.size(); j++) {
-            // generate rwplay file
-            std::string rwplay = "";
-//            const std::string folder = "../rwplays_cylinder_side/";
+//        for (unsigned int j = 0; j < cylinder_positions.size(); j++) {
+//            // generate rwplay file
+//            const std::string folder = "../rwplays_cylinder_top/";
 //            rwplay = folder + "_position" + std::to_string(i) + "_cylinder" + std::to_string(j+1) + ".rwplay";
 
-            // move cylinder
-            rw::math::Transform3D<> cylinder_trans(cylinder_positions[j], cylinder_rot);
-            cylinder_frame->moveTo(cylinder_trans, state);
+//            // move cylinder
+//            rw::math::Transform3D<> cylinder_trans(cylinder_positions[j], cylinder_rot);
+//            cylinder_frame->moveTo(cylinder_trans, state);
 
-            // get collision free solutions
-            std::vector<rw::math::Q> collision_free_solutions = getCollisionFreeSolutions(wc, robot_ur5, cylinder_frame, "GraspTarget", rwplay, state);
+//            // get collision free solutions
+//            std::vector<rw::math::Q> collision_free_solutions = getCollisionFreeSolutions(wc, robot_ur5, cylinder_frame, "GraspTarget", rwplay, state);
 
-            // store total number of solutions
-            solutions += collision_free_solutions.size();
-        }
+//            // store total number of solutions
+//            solutions += collision_free_solutions.size();
+//        }
+
+//        // generate rwplay file
+//        const std::string folder = "../rwplays_cylinder_top/";
+//        rwplay = folder + "_position" + std::to_string(i) + "_cylinder_0.0_0.56" + ".rwplay";
+
+        // move cylinder
+        rw::math::Transform3D<> cylinder_trans(cylinder_pos, cylinder_rot);
+        cylinder_frame->moveTo(cylinder_trans, state);
+
+        // get collision free solutions
+        std::vector<rw::math::Q> collision_free_solutions = getCollisionFreeSolutions(wc, robot_ur5, cylinder_frame, "GraspTarget", rwplay, state);
+
+        // store total number of solutions
+        solutions += collision_free_solutions.size();
 
         // save data
         x_positions.push_back(base_positions[i](0));
         y_positions.push_back(base_positions[i](1));
         number_of_solutions.push_back(solutions);
 
-//        // show robot position and number of solutions
-//        std::cout << "x: " << base_positions[i](0) << " y: " << base_positions[i](1) << " solutions: " << number_of_solutions[i] << std::endl;
-
         // show process
-        if (i % 50 == 0) { std::cout << i << " / " << base_positions.size() << std::endl; }
+        if (i % 10 == 0) { std::cout << i << " / " << base_positions.size() << std::endl; }
     }
+    std::cout << base_positions.size() << " / " << base_positions.size() << std::endl;
 
-    // save all data to file data.binary
-    save2file(x_positions, y_positions, number_of_solutions);
+    // save all data to file_path
+    save2file(x_positions, y_positions, number_of_solutions, file_path);
 
     return 0;
 }

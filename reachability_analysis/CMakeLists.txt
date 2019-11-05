@@ -12,7 +12,7 @@ SET(ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 SET(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 
 # Set the RobWork root (edit in .bashrc if necessary)
-SET(RW_ROOT /home/mathi/RobWork/RobWork)
+SET(RW_ROOT ~/RobWork/RobWork)
 
 # Verbose mode prints more info when doing make
 set(CMAKE_VERBOSE_MAKEFILE false)
