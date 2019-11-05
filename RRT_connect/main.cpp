@@ -295,19 +295,6 @@ std::vector<double> calculate_path_rrt(const std::string wc_file,
 int main(int argc, char** argv) {
     std::cout << "\nProgram started\n" << std::endl;
 
-//    std::string lua_path;
-//    if (argc < 1) {
-//        showUsages();
-//        return 0;
-//    }
-//    else if ((std::string(argv[1]) == "-h") || (std::string(argv[1]) == "--help")) {
-//        showUsages();
-//        return 0;
-//    }
-//    else {
-//        lua_path = argv[1];
-//    }
-
     const std::string wc_file = "../Workcell_RRT/Scene.wc.xml";
     const std::string device_name = "UR-6-85-5-A";
     std::vector<std::vector<double>> datas;

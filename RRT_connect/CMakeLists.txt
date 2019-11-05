@@ -18,7 +18,6 @@ SET(RW_ROOT /home/mathi/RobWork/RobWork)
 set(CMAKE_VERBOSE_MAKEFILE false)
 
 # Set build type to release
-SET(CMAKE_BUILD_TYPE Release)
 SET(CMAKE_BUILD_TYPE Debug)
 MESSAGE("-- Build type: " ${CMAKE_BUILD_TYPE})
 
