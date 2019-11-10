@@ -2,6 +2,8 @@
 #include <fstream>
 #include <cstdio>
 #include <cstdlib>
+#include <sstream>
+#include <iomanip>
 #include <rw/rw.hpp>
 #include <rwlibs/pathplanners/rrt/RRTPlanner.hpp>
 #include <rwlibs/pathplanners/rrt/RRTQToQPlanner.hpp>
@@ -21,10 +23,22 @@
 
 #define MAXTIME 60.
 //#define ESTEPSIZE 0.005
+#define WC_FILE "../Workcell_RRT/Scene.wc.xml"
+#define DEVICE_NAME "UR-6-85-5-A"
+#define MAX_STEP_SIZE 4.0
+#define MAX_ITERATIONS 30
 
 void showUsages() {
     std::cerr << "-path_to_lua_file" << std::endl;
     std::cerr << "/path/to/file.lua" << std::endl;
+}
+
+std::string convertDoub2Str(const double &input) {
+    std::ostringstream streamObj;
+    streamObj << std::fixed;
+    streamObj << std::setprecision(1);
+    streamObj << input;
+    return streamObj.str();
 }
 
 /**
@@ -129,47 +143,42 @@ rw::math::Q getQ(rw::models::SerialDevice::Ptr robot,
 /**
  * The functions is inspired from the exercise in lecture 6 of robotics.
  * @brief calculates the path of RRT
- * @param wc_file       :   path to the workcell file
- * @param device_name   :   name of the device
  * @param step_size     :   size of the steps in RRT
  * @param lua_path      :   path to the lua file
  * @return              :   0 if ok else -1
  */
-std::vector<double> calculate_path_rrt(const std::string wc_file,
-                                       const std::string device_name,
-                                       const std::string lua_path,
-                                       const double step_size=0.05) {
-//    std::cout << "Trying to use workcell " << wc_file << " and device " << device_name << std::endl;
+std::vector<double> calculatePathRRT(const std::string luaPath,
+                                     const double stepSize=0.05) {
     std::vector<double> result;
 
     // open file to store path for robworks
     std::ofstream myfile;
-    myfile.open(lua_path);
+    myfile.open(luaPath);
 
     // set the random seed
     rw::math::Math::seed();
 
     // load workcell
-    rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(wc_file);
+    rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(WC_FILE);
 
     // find the tool frame
-    rw::kinematics::Frame *tool_frame = wc->findFrame("Tool");
-    if (tool_frame == NULL) {
+    rw::kinematics::Frame *toolFrame = wc->findFrame("Tool");
+    if (toolFrame == NULL) {
         std::cerr << "Tool not found!" << std::endl;
         return result;
     }
 
     // find cylinder frame
-    rw::kinematics::MovableFrame *cylinder_frame = wc->findFrame<rw::kinematics::MovableFrame>("Cylinder");
-    if (cylinder_frame == NULL) {
+    rw::kinematics::MovableFrame *cylinderFrame = wc->findFrame<rw::kinematics::MovableFrame>("Cylinder");
+    if (cylinderFrame == NULL) {
         std::cerr << "Cylinder frame not found!" << std::endl;
         return result;
     }
 
     // find device
-    rw::models::SerialDevice::Ptr device = wc->findDevice<rw::models::SerialDevice>(device_name);
+    rw::models::SerialDevice::Ptr device = wc->findDevice<rw::models::SerialDevice>(DEVICE_NAME);
     if (device == NULL) {
-        std::cerr << "Device: " << device_name << " not found!" << std::endl;
+        std::cerr << "Device: " << DEVICE_NAME << " not found!" << std::endl;
         return result;
     }
 
@@ -195,13 +204,14 @@ std::vector<double> calculate_path_rrt(const std::string wc_file,
 //    std::cout << to << std::endl;
 
     // configurations to grap the cylinder from the side
-    //rw::math::Q from(6, 2.5, -2.099, -1.593, -0.991, 1.571, 0.0);     // cylinder (-0.25, 0.474, 0.15)
-    rw::math::Q from(6, 1.693, -1.728, -2.068, -0.932, 1.571, 0.0);     // cylinder (0.25, 0.474, 0.15)
-    rw::math::Q to (6, -1.154, -1.798, -1.993, -0.934, 1.571, 0.0);     // cylinder (0.3, -0.5, 0.15)
+    //rw::math::Q from(6, 2.5, -2.099, -1.593, -0.991, 1.571, 0.0); // cylinder (-0.25, 0.474, 0.15)
+    rw::math::Q from(6, 2.185, -1.795, -1.987, -0.915, 1.571, 0.0); // cylinder (0.0, 0.474, 0.15)
+    //rw::math::Q from(6, 1.693, -1.728, -2.068, -0.932, 1.571, 0.0); // cylinder (0.25, 0.474, 0.15)
+    rw::math::Q to (6, -1.154, -1.798, -1.993, -0.934, 1.571, 0.0); // cylinder (0.3, -0.5, 0.15)
 
     //Set Q to the initial state and grip the bottle frame
     device->setQ(from, state);
-    rw::kinematics::Kinematics::gripFrame(cylinder_frame, tool_frame, state);
+    rw::kinematics::Kinematics::gripFrame(cylinderFrame, toolFrame, state);
 
     rw::proximity::CollisionDetector detector(wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy());
     rw::pathplanning::PlannerConstraint constraint = rw::pathplanning::PlannerConstraint::make(&detector, device, state);
@@ -212,7 +222,7 @@ std::vector<double> calculate_path_rrt(const std::string wc_file,
     rw::pathplanning::QToQPlanner::Ptr planner = rwlibs::pathplanners::RRTPlanner::makeQToQPlanner(constraint,
                                                                                                    sampler,
                                                                                                    metric,
-                                                                                                   step_size,
+                                                                                                   stepSize,
                                                                                                    rwlibs::pathplanners::RRTPlanner::RRTConnect);
     if (!checkCollisions(device, state, detector, from)) {
         std::cout << "Collision from!" << std::endl;
@@ -285,38 +295,39 @@ std::vector<double> calculate_path_rrt(const std::string wc_file,
     }
     myfile.close();
 
-    std::cout << step_size << " " << t.getTime() << " " << distance << std::endl;
-    result.push_back(step_size);
+    std::cout << stepSize << " " << t.getTime() << " " << distance << " " << path.size() << std::endl;
+    result.push_back(stepSize);
     result.push_back(t.getTime());
     result.push_back(distance);
+    result.push_back(path.size());
     return result;
 }
 
 int main(int argc, char** argv) {
     std::cout << "\nProgram started\n" << std::endl;
 
-    const std::string wc_file = "../Workcell_RRT/Scene.wc.xml";
-    const std::string device_name = "UR-6-85-5-A";
     std::vector<std::vector<double>> datas;
-    for (unsigned int i = 0; i < 10; i++) {
-        double step_size = std::pow(0.5, i);
-        std::string lua_path = "../cylinder_0.25_0.474_0.15/path_" + std::to_string(i+1) + ".lua";
-        std::vector<double> result = calculate_path_rrt(wc_file, device_name, lua_path, step_size);
-        if (result.size() == 0) {
-            std::cout << "Terminate the program!" << std::endl;
-            return 0;
+    for (double stepSize = 0.1; stepSize < MAX_STEP_SIZE + 0.1; stepSize += 0.1) {
+        std::string luaPath = "../cylinder_0.0_0.474_0.15/path_" + convertDoub2Str(stepSize) + ".lua";
+        for (unsigned int i = 0; i < MAX_ITERATIONS; i++) {
+            std::vector<double> result = calculatePathRRT(luaPath, stepSize);
+            if (result.size() == 0) {
+                std::cout << "Terminate the program!" << std::endl;
+                return 0;
+            }
+            datas.push_back(result);
         }
-        datas.push_back(result);
     }
 
     // write data to file
-    std::string path = "../cylinder_0.25_0.474_0.15/data.txt";
+    std::string path = "../cylinder_0.0_0.474_0.15/data.txt";
     std::ofstream my_file;
     my_file.open(path);
     for (std::vector<double> data : datas) {
         std::string str = std::to_string(data[0]) + " "
                         + std::to_string(data[1]) + " "
-                        + std::to_string(data[2]) + "\n";
+                        + std::to_string(data[2]) + " "
+                        + std::to_string(data[3]) + "\n";
         my_file << str;
     }
     my_file.close();

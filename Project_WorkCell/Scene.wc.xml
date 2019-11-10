@@ -9,7 +9,7 @@
 
 	<Frame name="URReference" refframe="Table" type="Movable">
 		<!-- <RPY>0 0 0</RPY> <Pos>0 0 0.11</Pos> -->
-		<RPY>0 0 0</RPY> <Pos>0.3 0 0.11</Pos>
+		<RPY>0 0 0</RPY> <Pos>0.2 0 0.11</Pos>
 	</Frame>
 	<Include file="UR5/UR-6-85-5-A/Device.wc.xml" />
 
@@ -24,14 +24,14 @@
 		<RPY>0 0 0</RPY> <Pos>0 0 0.15</Pos>
 	</Frame>
 		
-	<Frame name="Bottle" refframe="Table"  type="Movable" daf="true" >
+	<!-- <Frame name="Bottle" refframe="Table"  type="Movable" daf="true" >
 		<RPY> -90 0 90 </RPY> <Pos> 0 0.474 0.21 </Pos>
 		<Drawable name="Bottle" refframe="Bottle">
 			<Polytope file="parts/bottle" />
 		</Drawable>
-	</Frame>
+	</Frame> -->
 
-	<Frame name="Square" refframe="Table"  type="Movable" daf="true" >
+	<!-- <Frame name="Square" refframe="Table"  type="Movable" daf="true" >
 		<RPY> -90 0 90 </RPY> <Pos> 0.25 0.474 0.150</Pos>
 		<Drawable name="Square" refframe="Square">
 			<Polytope file="parts/Square" />
@@ -47,6 +47,27 @@
 
 	<Frame name="GraspTarget" refframe="Cylinder" type="Movable">
 		<RPY> 0 -90 180 </RPY> <Pos> 0 0 0 </Pos>
+	</Frame> -->
+
+	<Frame name="RubberDuck" refframe="Table" type="Movable" daf="true">
+		<RPY>0 0 0</RPY> <Pos>0.25 0.474 0.133</Pos>
+		<Drawable name="RubberDuck" refframe="RubberDuck">
+			<Polytope file="parts/rubber_duck" />
+		</Drawable>
+	</Frame>
+
+	<Frame name="Trex" refframe="Table" type="Movable" daf="true">
+		<RPY>0 0 0</RPY> <Pos>-0.25 0.474 0.1535</Pos>
+		<Drawable name="Trex" refframe="Trex">
+			<Polytope file="parts/trex" />
+		</Drawable>
+	</Frame>
+
+	<Frame name="GardenGnome" refframe="Table" type="Movable" daf="true">
+		<RPY>0 0 0</RPY> <Pos>0.0 0.474 0.1101</Pos>
+		<Drawable name="GardenGnome" refframe="GardenGnome">
+			<Polytope file="parts/garden_gnome" />
+		</Drawable>
 	</Frame>
 
 	<!-- Walls for picking area -->

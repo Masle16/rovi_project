@@ -1,5 +1,8 @@
-//----------------------------------------------------------
-// Includes
+/* RoVi Final Project
+ * Simulated Depth Sensor
+ */
+
+// INCLUDES
 #include <iostream>
 #include <chrono>
 #include <pcl/io/pcd_io.h>
@@ -18,10 +21,11 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/features/spin_image.h>
 #include <pcl/common/random.h>
-//---------------------------------------------------------
+#include <rw/rw.hpp>
 
 //---------------------------------------------------------
-// Defines
+
+// DEFINES
 #define MAX_ITERATIONS 10000
 #define LEAF_SIZE 0.01
 #define MEAN 200
@@ -30,13 +34,22 @@
 #define FILTER_LIMIT_MAX -1.225
 #define SMOOTHING_RADIUS 5
 #define SPIN_IMAGES_RADIUS 0.05
-#define ALIGNMENT_THRESHOLD std::pow(0.05, 2)
+#define ALIGNMENT_THRESHOLD 0.000025
 #define SCENE_PATH "../Scanner25D.pcd"
-#define OBJECT_PATH "../../point_clouds_of_objects/bottle.pcd"
-//---------------------------------------------------------
+#define OBJECT_PATH "../../point_clouds_of_objects/rubber_duck.pcd"
+#define WC_FILE "../workcell/Scene.wc.xml"
+#define SCANNER_FRAME "Scanner25D"
 
 //---------------------------------------------------------
-// Functions
+
+// TYPEDEFS
+typedef pcl::PointXYZ PointT;
+typedef pcl::PointCloud<pcl::PointXYZ> PointCloudT;
+typedef pcl::Histogram<153> HistT;
+
+//---------------------------------------------------------
+
+// FUNCTIONS
 /**
  * @brief showPointClouds
  * @param scene
@@ -59,6 +72,7 @@ void showPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr scene,
     viewer->setCameraPosition(-0.0562254, -0.0666346, -0.529442, -0.00165773, -0.0633305, -0.167617, 0.982829, 0.108549, -0.149214);
     viewer->setPosition(662, 137);
     while (!viewer->wasStopped()) { viewer->spinOnce(100); }
+    viewer->close();
 }
 
 /**
@@ -126,7 +140,7 @@ void smoothing(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud,
 }
 
 /**
- * This function is from exercise 7 in the computer vision course.
+ * This function is from exercise 6 in the computer vision course.
  *
  * @brief estimateSurfaceNormal : Compute the surface normals using k=10 nearest
  *  neighbors around each point
@@ -149,7 +163,7 @@ pcl::PointCloud<pcl::Normal>::Ptr estimateSurfaceNormal(pcl::PointCloud<pcl::Poi
 }
 
 /**
- * This function is from exercise 7 in the computer vision course.
+ * This function is from exercise 6 in the computer vision course.
  *
  * @brief computeSpinImages : Compute local spin image features with r=5 surface
  *  description.
@@ -175,7 +189,7 @@ pcl::PointCloud<pcl::Histogram<153>>::Ptr computeSpinImages(pcl::PointCloud<pcl:
 }
 
 /**
- * This functions is form exercise 7 in the computer vision course
+ * This functions is form exercise 6 in the computer vision course
  *
  * @brief calcL2Dist : compute the l2 distance between the two histograms
  * @param object : histogram of the object
@@ -185,14 +199,14 @@ pcl::PointCloud<pcl::Histogram<153>>::Ptr computeSpinImages(pcl::PointCloud<pcl:
 float computeL2Dist(const pcl::Histogram<153> &object,
                     const pcl::Histogram<153> &scene) {
     float result = 0.0;
-    for (unsigned int i = 0; i < scene.descriptorSize(); i++) {
+    for (int i = 0; i < scene.descriptorSize(); i++) {
         result += std::sqrt(std::pow((scene.histogram[i] - object.histogram[i]), 2));
     }
     return result;
 }
 
 /**
- * This function is from exercise 7 in the computer vision course.
+ * This function is from exercise 6 in the computer vision course.
  *
  * @brief nearestMatchingFeature : find the nearest matching (k=1) scene feature
  *  for each object feature
@@ -221,17 +235,19 @@ std::vector<int> nearestMatchingFeature(pcl::PointCloud<pcl::Histogram<153>>::Pt
 }
 
 /**
- * This function is from exercise 7 in the computer vision course.
+ * This function is from exercise 6 in the computer vision course.
  *
  * @brief findAlignment
  * @param scene
  * @param object
  * @param object2scene
+ * @param &output
  * @return
  */
-pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ>::Matrix4 findAlignment(pcl::PointCloud<pcl::PointXYZ>::Ptr scene,
-                                                                                                    pcl::PointCloud<pcl::PointXYZ>::Ptr object,
-                                                                                                    std::vector<int> object2scene) {
+void findGlobalAlignment(pcl::PointCloud<pcl::PointXYZ>::Ptr scene,
+                         pcl::PointCloud<pcl::PointXYZ>::Ptr object,
+                         std::vector<int> object2scene,
+                         pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ>::Matrix4 &output) {
     pcl::common::UniformGenerator<int> uniform_generator(0, object2scene.size()-1);
     pcl::PointCloud<pcl::PointXYZ>::Ptr object_transform(new pcl::PointCloud<pcl::PointXYZ>());
     pcl::PointCloud<pcl::PointXYZ>::Ptr object_points(new pcl::PointCloud<pcl::PointXYZ>());
@@ -252,7 +268,6 @@ pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ>::Ma
     scene_points->is_dense = false;
     scene_points->resize(scene_points->height * scene_points->width);
 
-    //float threshold = std::pow(0.005, 2);
     int max_inliers = 0;
     unsigned int k = 1;
     std::vector<int> k_indices(k);
@@ -280,13 +295,77 @@ pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ>::Ma
     }
     auto time_end = std::chrono::high_resolution_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(time_end - time_start);
-    std::cout << "\nExecution time => " << time.count() << " s." << std::endl;
-    return best_transform;
+    std::cout << "\nExecution time of global alignment => " << time.count() << " s" << std::endl;
+    output = best_transform;
+}
+
+/**
+ * This function is from exercise 6 in the computer vision course.
+ *
+ * @brief findLocalAlignment : implements ICP for bringing the models
+ *  into accurate alignment
+ * @param scene : scene point cloud
+ * @param object : object point cloud
+ * @param &output : estimated transformation
+ */
+void findLocalAlignment(pcl::PointCloud<pcl::PointXYZ>::Ptr scene,
+                        pcl::PointCloud<pcl::PointXYZ>::Ptr object,
+                        pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ>::Matrix4 &output) {
+    // for each object point p, find the nearest scene point q
+    pcl::search::KdTree<pcl::PointXYZ> kdTree;
+    kdTree.setInputCloud(scene);
+    int k = 1;
+    std::vector<int> kIndices(k);
+    std::vector<float> kSqrDist(k);
+    std::vector<int> sceneIdx, objectIdx;
+    auto timeStart = std::chrono::high_resolution_clock::now();
+    for (unsigned int i = 0; i < object->points.size(); i++) {
+        pcl::PointXYZ searchPoint = object->points[i];
+        int nearestNeighbor = kdTree.nearestKSearch(searchPoint, k, kIndices, kSqrDist);
+        if (kSqrDist[0] < ALIGNMENT_THRESHOLD) {
+            sceneIdx.push_back(kIndices[0]);
+            objectIdx.push_back(i);
+        }
+    }
+    // use all (p, q) pairs to estiamte T using the Kabsch algorithm
+    pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ> svd;
+    svd.estimateRigidTransformation(*object, objectIdx, *scene, sceneIdx, output);
+    auto timeEnd = std::chrono::high_resolution_clock::now();
+    auto time = std::chrono::duration_cast<std::chrono::seconds>(timeEnd - timeStart);
+    std::cout << "\nExecution time for local alignment => " << time.count() << " s" << std::endl;
+}
+
+/**
+ * @brief findFrameTransform
+ * @param frame_name
+ * @param output
+ */
+int getFrameTransform(const std::string frameName, rw::math::Transform3D<> &output) {
+    rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(WC_FILE);
+    rw::kinematics::State state = wc->getDefaultState();
+    rw::kinematics::Frame *objectFrame = wc->findFrame(frameName);
+    if (objectFrame == NULL) {
+        std::cerr << frameName << " not found!" << std::endl;
+        return-1;
+    }
+    rw::kinematics::Frame *scannerFrame = wc->findFrame("Scanner25D");
+    if (scannerFrame == NULL) {
+        std::cerr << "Scanner25D frame not found!" << std::endl;
+        return -1;
+    }
+    rw::kinematics::Frame *tableFrame = wc->findFrame("Table");
+    if (tableFrame == NULL) {
+        std::cerr << "Table frame not found!" << std::endl;
+        return -1;
+    }
+    rw::math::Transform3D<> objectTransform = objectFrame->getTransform(state);
+    rw::math::Transform3D<> scannerTransform = scannerFrame->getTransform(state);
+    rw::math::Transform3D<> tableTransform = tableFrame->getTransform(state);
+    output = scannerTransform * tableTransform * objectTransform;
+    return 0;
 }
 //---------------------------------------------------------
 
-
-//---------------------------------------------------------
 // Main
 int main(int argc, char** argv) {
     std::cout << "\nProgram started\n" << std::endl;
@@ -294,7 +373,7 @@ int main(int argc, char** argv) {
     //---------------------------
     // POINT CLOUD PREPROCESSING
     //---------------------------
-    std::cout << "\nPoint cloud preprocessing\n" << std::endl;
+    std::cout << "Point cloud preprocessing" << std::endl;
 
     // load the point cloud
     pcl::PointCloud<pcl::PointXYZ>::Ptr scene(new pcl::PointCloud<pcl::PointXYZ>);
@@ -302,6 +381,7 @@ int main(int argc, char** argv) {
     reader.read(SCENE_PATH, *scene);
 
     // display point cloud info
+    std::cout << "Point cloud before preprocessing => " << std::endl;
     pcl::PointXYZ min_pt, max_pt;
     pcl::getMinMax3D(*scene, min_pt, max_pt);
     std::cout << "Max x: " << max_pt.x << std::endl;
@@ -310,8 +390,7 @@ int main(int argc, char** argv) {
     std::cout << "Min x: " << min_pt.x << std::endl;
     std::cout << "Min y: " << min_pt.y << std::endl;
     std::cout << "Min z: " << min_pt.z << std::endl;
-    std::cerr << "PointCloud before filtering: "
-              << scene->width * scene->height
+    std::cerr << scene->width * scene->height
               << " data points ("
               << pcl::getFieldsList(*scene)
               << ")."
@@ -319,30 +398,53 @@ int main(int argc, char** argv) {
 
     // filter point cloud
     voxelGrid(scene, scene);
-    //outlierRemoval(cloud_filtered, cloud_filtered);
-    spatialFilter(scene, scene);
-    //smoothing(cloud_filtered, cloud_filtered);
-
-    // display filtered cloud info
-    std::cerr << "PointCloud after filtering: "
+    std::cerr << "PointCloud after voxel grid: "
               << scene->width * scene->height
               << " data points ("
               << pcl::getFieldsList(*scene)
               << ")."
               << std::endl;
 
+//    outlierRemoval(scene, scene);
+//    std::cerr << "PointCloud after outlier removal filter: "
+//              << scene->width * scene->height
+//              << " data points ("
+//              << pcl::getFieldsList(*scene)
+//              << ")."
+//              << std::endl;
+
+    spatialFilter(scene, scene);
+    std::cerr << "PointCloud after spatial filter: "
+              << scene->width * scene->height
+              << " data points ("
+              << pcl::getFieldsList(*scene)
+              << ")."
+              << std::endl;
+
+//    smoothing(scene, scene);
+//    std::cerr << "PointCloud after spatial smoothing: "
+//              << scene->width * scene->height
+//              << " data points ("
+//              << pcl::getFieldsList(*scene)
+//              << ")."
+//              << std::endl;
+
     // save the new point cloud
     pcl::PCDWriter writer;
     writer.write<pcl::PointXYZ>("../cloud_filtered.pcd", *scene, false);
 
     //---------------------------
-    // POSE ESTIMATION 3D TO 3D
+    // GLOBAL ALIGNMENT
     //---------------------------
-    std::cout << "\nPose estimation 3D to 3D\n" << std::endl;
+    std::cout << "Pose estimation 3D to 3D" << std::endl;
+    std::cout << "Global alignment.." << std::endl;
 
     // load the generated object point cloud
     pcl::PointCloud<pcl::PointXYZ>::Ptr object(new pcl::PointCloud<pcl::PointXYZ>);
     reader.read(OBJECT_PATH, *object);
+
+    // show intial state of scene and object
+    //showPointClouds(scene, object, "Initial state");
 
     // compute surface normals
     pcl::PointCloud<pcl::Normal>::Ptr scene_normals = estimateSurfaceNormal(scene);
@@ -356,12 +458,28 @@ int main(int argc, char** argv) {
     std::vector<int> object2scene = nearestMatchingFeature(spin_images_scene, spin_images_object);
 
     // find alignment
-    pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ>::Matrix4 transform = findAlignment(scene, object, object2scene);
-    std::cout << "\nTransform =>\n" << transform << std::endl;
-
+    pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ>::Matrix4 transformGlobal;
+    findGlobalAlignment(scene, object, object2scene, transformGlobal);
+    pcl::transformPointCloud(*object, *object, transformGlobal);
+    std::cout << "Found transform after global alignment =>\n" << transformGlobal << std::endl;
     // show the state of the scene and the object
-    pcl::transformPointCloud(*object, *object, transform);
-    showPointClouds(scene, object, "Finale state");
+    showPointClouds(scene, object, "After global alignment");
+
+    //-----------------
+    // LOCAL ALIGNMENT
+    //-----------------
+    std::cout << "Local alignment.." << std::endl;
+    pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ>::Matrix4 transformLocal;
+    findLocalAlignment(scene, object, transformLocal);
+    pcl::transformPointCloud(*object, *object, transformLocal);
+    std::cout << "Found transform after local alignment =>\n" << transformLocal * transformGlobal << std::endl;
+    // show the state of the scene and the object
+    showPointClouds(scene, object, "After local alignment");
+
+    // Real transform from the camera
+    rw::math::Transform3D<> wcTransform;
+    if (getFrameTransform("RubberDuck", wcTransform) != 0) { return -1; }
+    std::cout << "Real transform =>\n" << wcTransform.P() << "\n" << wcTransform.R() << std::endl;
 
     std::cout << "\nProgram ended\n" << std::endl;
     return 0;

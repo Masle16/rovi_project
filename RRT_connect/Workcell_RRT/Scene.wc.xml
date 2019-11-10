@@ -38,19 +38,53 @@
 		</Drawable>
 	</Frame> -->
 
-	<Frame name="Cylinder" refframe="Table"  type="Movable" daf="true" >
+	<Frame name="Cylinder1" refframe="Table"  type="Movable" daf="true" >
 		<RPY> -90 0 180 </RPY>
-		<!-- <Pos>-0.25 0.474 0.15</Pos> -->
-		<Pos>0.25 0.474 0.15 </Pos>
+		<!-- <Pos>-0.25 0.474 0.15</Pos>
+		<Pos>0.25 0.474 0.15 </Pos> -->
+		<Pos>0.0 0.474 0.15 </Pos>
 		<!-- <Pos>0.3 -0.5 0.15</Pos> -->
-		<Drawable name="Cylinder" refframe="Cylinder">
+		<Drawable name="Cylinder1" refframe="Cylinder1">
 			<Polytope file="parts/cylinder" />
 		</Drawable>
 	</Frame>
 
-	<Frame name="GraspTarget" refframe="Cylinder" type="Movable">
-		<RPY> 0 180 0 </RPY> <Pos> 0 0 0 </Pos>
+	<Frame name="Cylinder2" refframe="Table"  type="Movable" daf="true" >
+		<RPY> -90 0 180 </RPY>
+		<!-- <Pos>-0.25 0.474 0.15</Pos> -->
+		<Pos>0.25 0.474 0.15 </Pos>
+		<!-- <Pos>0.0 0.474 0.15 </Pos> -->
+		<!-- <Pos>0.3 -0.5 0.15</Pos> -->
+		<Drawable name="Cylinder2" refframe="Cylinder2">
+			<Polytope file="parts/cylinder" />
+		</Drawable>
 	</Frame>
+
+	<Frame name="Cylinder3" refframe="Table"  type="Movable" daf="true" >
+		<RPY> -90 0 180 </RPY>
+		<Pos>-0.25 0.474 0.15</Pos>
+		<!-- <Pos>0.25 0.474 0.15 </Pos> -->
+		<!-- <Pos>0.0 0.474 0.15 </Pos> -->
+		<!-- <Pos>0.3 -0.5 0.15</Pos> -->
+		<Drawable name="Cylinder3" refframe="Cylinder3">
+			<Polytope file="parts/cylinder" />
+		</Drawable>
+	</Frame>
+
+	<Frame name="Cylinder4" refframe="Table"  type="Movable" daf="true" >
+		<RPY> -90 0 180 </RPY>
+		<!-- <Pos>-0.25 0.474 0.15</Pos> -->
+		<!-- <Pos>0.25 0.474 0.15 </Pos> -->
+		<!-- <Pos>0.0 0.474 0.15 </Pos> -->
+		<Pos>0.3 -0.5 0.15</Pos>
+		<Drawable name="Cylinder4" refframe="Cylinder4">
+			<Polytope file="parts/cylinder" />
+		</Drawable>
+	</Frame>
+
+	<!-- <Frame name="GraspTarget" refframe="Cylinder" type="Movable">
+		<RPY> 0 180 0 </RPY> <Pos> 0 0 0 </Pos>
+	</Frame> -->
 
 	<!-- Walls for picking area -->
 	<Frame name="Wall1" refframe="Table" type="Fixed">
