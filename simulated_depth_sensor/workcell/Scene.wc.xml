@@ -26,13 +26,13 @@
 	</Frame>
 
 	<Frame name="RubberDuck" refframe="Table" type="Movable" daf="true">
-		<RPY>0 0 0</RPY> <Pos>0.25 0.474 0.133</Pos>
+		<RPY>0 0 0</RPY> <Pos>0.25 0.474 0.13275</Pos>
 		<Drawable name="RubberDuck" refframe="RubberDuck">
 			<Polytope file="parts/rubber_duck" />
 		</Drawable>
 	</Frame>
 
-	<Frame name="Trex" refframe="Table" type="Movable" daf="true">
+	<!-- <Frame name="Trex" refframe="Table" type="Movable" daf="true">
 		<RPY>0 0 0</RPY> <Pos>-0.25 0.474 0.1535</Pos>
 		<Drawable name="Trex" refframe="Trex">
 			<Polytope file="parts/trex" />
@@ -44,7 +44,7 @@
 		<Drawable name="GardenGnome" refframe="GardenGnome">
 			<Polytope file="parts/garden_gnome" />
 		</Drawable>
-	</Frame>
+	</Frame> -->
 
 <!-- Walls for picking area -->
 	<Frame name="Wall1" refframe="Table" type="Fixed">

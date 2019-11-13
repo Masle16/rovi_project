@@ -50,23 +50,23 @@
 	</Frame> -->
 
 	<Frame name="RubberDuck" refframe="Table" type="Movable" daf="true">
-		<RPY>0 0 0</RPY> <Pos>0.25 0.474 0.133</Pos>
+		<RPY>0 0 90</RPY> <Pos>0.25 0.474 0.133</Pos>
 		<Drawable name="RubberDuck" refframe="RubberDuck">
-			<Polytope file="parts/rubber_duck" />
+			<Polytope file="parts/Rubber_duck" />
 		</Drawable>
 	</Frame>
 
 	<Frame name="Trex" refframe="Table" type="Movable" daf="true">
-		<RPY>0 0 0</RPY> <Pos>-0.25 0.474 0.1535</Pos>
+		<RPY>0 0 90</RPY> <Pos>-0.25 0.474 0.1535</Pos>
 		<Drawable name="Trex" refframe="Trex">
-			<Polytope file="parts/trex" />
+			<Polytope file="parts/Trex" />
 		</Drawable>
 	</Frame>
 
 	<Frame name="GardenGnome" refframe="Table" type="Movable" daf="true">
-		<RPY>0 0 0</RPY> <Pos>0.0 0.474 0.1101</Pos>
+		<RPY>0 0 90</RPY> <Pos>0.0 0.474 0.1101</Pos>
 		<Drawable name="GardenGnome" refframe="GardenGnome">
-			<Polytope file="parts/garden_gnome" />
+			<Polytope file="parts/Garden_gnome" />
 		</Drawable>
 	</Frame>
 

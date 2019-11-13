@@ -31,16 +31,16 @@
 //---------------------------------------------------------
 
 // DEFINES
-#define MAX_ITERATIONS 10000
-#define LEAF_SIZE 0.01
+#define MAX_ITERATIONS 5000
+#define LEAF_SIZE 0.001
 #define MEAN 200
 #define STD_DEV 0.1
 #define FILTER_LIMIT_MIN -1.5
-#define FILTER_LIMIT_MAX -1.225
+#define FILTER_LIMIT_MAX 0// -1.15
 #define SMOOTHING_RADIUS 5
 #define SPIN_IMAGES_RADIUS 0.05
 #define ALIGNMENT_THRESHOLD 0.000025
-#define THRESH_SQR 0.000025
+#define THRESH_SQR 0.001 * 0.001
 #define SCENE_PATH "../Scanner25D.pcd"
 #define OBJECT_PATH "../../point_clouds_of_objects/rubber_duck.pcd"
 #define WC_FILE "../workcell/Scene.wc.xml"
@@ -160,7 +160,7 @@ PointCloudT::Ptr planarSegmentation(PointCloudT::Ptr &cloud) {
     seg.setOptimizeCoefficients(true);
     seg.setModelType(pcl::SACMODEL_PLANE);
     seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setDistanceThreshold(0.01);
+    seg.setDistanceThreshold(0.001);
     seg.setInputCloud(cloud);
     seg.segment(*inliers, *coeff);
     if (inliers->indices.size() == 0) {
@@ -384,7 +384,7 @@ Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene,
         std::cout << "Starting RANSAC.." << std::endl;
         auto timeStart = std::chrono::high_resolution_clock::now();
         pcl::common::UniformGenerator<int> gen(0, correspondences.size()-1);
-        for (size_t i = 0; i < 5000; i++) {
+        for (size_t i = 0; i < MAX_ITERATIONS; i++) {
             if ((i +1) % 250 == 0) { std::cout << "\t" << i+1 << std::endl; }
             // sample 3 random correspondeces
             std::vector<int> idxObject(3), idxScene(3);
@@ -435,7 +435,7 @@ Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene,
         // print timing
         auto timeEnd = std::chrono::high_resolution_clock::now();
         auto time = std::chrono::duration_cast<std::chrono::seconds>(timeEnd - timeStart);
-        std::cout << "\nExecution time for local alignment => " << time.count() << " s" << std::endl;
+        std::cout << "\nExecution time for local alignment --> " << time.count() << " s" << std::endl;
         // print pose
         std::cout << "Got the following pose:\n" << result << std::endl;
         std::cout << "Inliers: " << inliers << std::endl;
@@ -549,7 +549,7 @@ Eigen::Matrix4f findLocalAlignment(PointCloudT::Ptr scene,
     // print timing
     auto timeEnd = std::chrono::high_resolution_clock::now();
     auto time = std::chrono::duration_cast<std::chrono::seconds>(timeEnd - timeStart);
-    std::cout << "\nExecution time for local alignment => " << time.count() << " s" << std::endl;
+    std::cout << "\nExecution time for local alignment --> " << time.count() << " s" << std::endl;
     // print pose
     std::cout << "Got the following pose:\n" << result << std::endl;
     std::cout << "Inliers: " << inliers << std::endl;
@@ -581,41 +581,6 @@ Eigen::Matrix4f findLocalAlignment(PointCloudT::Ptr scene,
 //    std::cout << "\nExecution time for local alignment => " << time.count() << " s" << std::endl;
 }
 
-/**
- * @brief getFrameTransform
- * @param frame_name
- * @param output
- */
-int getFrameTransform(const std::string frameName, rw::math::Transform3D<> &output) {
-    rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(WC_FILE);
-    rw::kinematics::State state = wc->getDefaultState();
-    rw::kinematics::Frame *objectFrame = wc->findFrame(frameName);
-    if (objectFrame == NULL) {
-        std::cerr << frameName << " not found!" << std::endl;
-        return-1;
-    }
-    rw::kinematics::Frame *scannerFrame = wc->findFrame("Scanner25D");
-    if (scannerFrame == NULL) {
-        std::cerr << "Scanner25D frame not found!" << std::endl;
-        return -1;
-    }
-    rw::kinematics::Frame *tableFrame = wc->findFrame("Table");
-    if (tableFrame == NULL) {
-        std::cerr << "Table frame not found!" << std::endl;
-        return -1;
-    }
-    rw::kinematics::Frame *worldFrame = wc->findFrame("WORLD");
-    if (worldFrame == NULL) {
-        std::cerr << "WORLD frame not found!" << std::endl;
-        return -1;
-    }
-    rw::math::Transform3D<> objectTransform = objectFrame->getTransform(state);
-    rw::math::Transform3D<> scannerTransform = scannerFrame->getTransform(state);
-    rw::math::Transform3D<> tableTransform = tableFrame->getTransform(state);
-    rw::math::Transform3D<> worldTransform = worldFrame->getTransform(state);
-    output = scannerTransform * worldTransform * tableTransform * objectTransform;
-    return 0;
-}
 
 /**
  * @brief convertTransform3D2Matrix4
@@ -624,21 +589,41 @@ int getFrameTransform(const std::string frameName, rw::math::Transform3D<> &outp
  * @param output
  * @return
  */
-int convertTransform3D2Matrix4(const std::string &frameName,
-                               const rw::math::Transform3D<> &input,
-                               pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ>::Matrix4 &output) {
+Eigen::Matrix4f getTransform(const std::string &frameName) {
+    Eigen::Matrix4f result = Eigen::Matrix4f::Identity();
     // get frame transform
     rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(WC_FILE);
     rw::kinematics::State state = wc->getDefaultState();
     rw::kinematics::Frame *objectFrame = wc->findFrame(frameName);
     if (objectFrame == NULL) {
         std::cerr << frameName << " not found!" << std::endl;
-        return-1;
+        return result;
     }
     rw::math::Transform3D<> objectTransform = objectFrame->getTransform(state);
+    rw::math::Vector3D<> position = objectTransform.P();
+    rw::math::Rotation3D<> rotation = objectTransform.R();
     // convert to matrix4
+    result(0,0) = (float)rotation(0,0);
+    result(0,1) = (float)rotation(0,1);
+    result(0,2) = (float)rotation(0,2);
+    result(0,3) = (float)position(0);
 
-    return 0;
+    result(1,0) = (float)rotation(1,0);
+    result(1,1) = (float)rotation(1,1);
+    result(1,2) = (float)rotation(1,2);
+    result(1,3) = (float)position(1);
+
+    result(2,0) = (float)rotation(0,2);
+    result(2,1) = (float)rotation(2,1);
+    result(2,2) = (float)rotation(2,2);
+    result(2,3) = (float)position(2);
+
+//    output(0,0) = 0;
+//    output(0,1) = 0;
+//    output(0,2) = 0;
+//    output(0,3) = 1;
+
+    return result;
 }
 //---------------------------------------------------------
 
@@ -712,11 +697,14 @@ int main(int argc, char** argv) {
 //              << std::endl;
 
     // remove plans in the scene
-    scene = planarSegmentation(scene);
-    scene = planarSegmentation(scene);
-    scene = planarSegmentation(scene);
-    scene = planarSegmentation(scene);
-    scene = planarSegmentation(scene);
+    for (size_t i = 0; i < 10; i++)
+        scene = planarSegmentation(scene);
+    std::cerr << "PointCloud after planar segmentation: "
+              << scene->width * scene->height
+              << " data points ("
+              << pcl::getFieldsList(*scene)
+              << ")."
+              << std::endl;
 
     // save the new point cloud
     pcl::PCDWriter writer;
@@ -748,13 +736,13 @@ int main(int argc, char** argv) {
               << std::endl;
 
     // filter object point cloud
-    voxelGrid(object, object, 0.0011);
-    std::cerr << "object point cloud after voxel grid: "
-              << object->width * object->height
-              << " data points ("
-              << pcl::getFieldsList(*object)
-              << ")."
-              << std::endl;
+//    voxelGrid(object, object, 0.0011);
+//    std::cerr << "object point cloud after voxel grid: "
+//              << object->width * object->height
+//              << " data points ("
+//              << pcl::getFieldsList(*object)
+//              << ")."
+//              << std::endl;
 
     // show intial state of scene and object
     {
@@ -772,7 +760,6 @@ int main(int argc, char** argv) {
     // find alignment
     Eigen::Matrix4f poseGlobal = findGlobalAlignment(scene, object);
     pcl::transformPointCloud(*object, *object, poseGlobal);
-    std::cout << "Found transform after global alignment =>\n" << poseGlobal << std::endl;
     // show the state of the scene and the object
     {
         pcl::visualization::PCLVisualizer view("After global alignment");
@@ -787,7 +774,7 @@ int main(int argc, char** argv) {
     std::cout << "Local alignment.." << std::endl;
     Eigen::Matrix4f poseLocal = findLocalAlignment(scene, object);
     pcl::transformPointCloud(*object, *object, poseLocal);
-    std::cout << "Found transform after local alignment =>\n" << poseLocal * poseGlobal << std::endl;
+    std::cout << "Found transform after local alignment -->\n" << poseLocal * poseGlobal << std::endl;
     // show the state of the scene and the object
     {
         pcl::visualization::PCLVisualizer view("After local alignment");
@@ -797,9 +784,14 @@ int main(int argc, char** argv) {
     }
 
     // Real transform from the camera
-    rw::math::Transform3D<> wcTransform;
-    if (getFrameTransform("RubberDuck", wcTransform) != 0) { return -1; }
-    std::cout << "Real transform =>\n" << wcTransform.P() << "\n" << wcTransform.R() << std::endl;
+    Eigen::Matrix4f rubberDuckTransform = getTransform("RubberDuck");
+    std::cout << "Rubber duck transform -->\n" << rubberDuckTransform << std::endl;
+    Eigen::Matrix4f tableTransform = getTransform("Table");
+    std::cout << "Table transform -->\n" << tableTransform << std::endl;
+    Eigen::Matrix4f worldTransform = getTransform("WORLD");
+    std::cout << "World transform -->\n" << worldTransform << std::endl;
+    Eigen::Matrix4f scannerTransform = getTransform("Scanner25D");
+    std::cout << "Scanner transform -->\n" << scannerTransform << std::endl;
 
     std::cout << "\nProgram ended\n" << std::endl;
     return 0;
