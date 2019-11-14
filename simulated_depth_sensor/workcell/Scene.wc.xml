@@ -9,7 +9,7 @@
 
 	<Frame name="URReference" refframe="Table" type="Movable">
 		<!-- <RPY>0 0 0</RPY> <Pos>0 0 0.11</Pos> -->
-		<RPY>0 0 0</RPY> <Pos>0.2 0 0.11</Pos>
+		<RPY>205 0 0</RPY> <Pos>0.2 0 0.11</Pos>
 	</Frame>
 	<Include file="UR5/UR-6-85-5-A/Device.wc.xml" />
 
@@ -25,9 +25,9 @@
 		<RPY>0 0 0</RPY> <Pos>0 0 0.15</Pos>
 	</Frame>
 
-	<Frame name="RubberDuck" refframe="Table" type="Movable" daf="true">
-		<RPY>0 0 0</RPY> <Pos>0.25 0.474 0.13275</Pos>
-		<Drawable name="RubberDuck" refframe="RubberDuck">
+	<Frame name="Duck" refframe="Table" type="Movable" daf="true">
+		<RPY>119.655720 0 0</RPY> <Pos>-0.145188 0.443078 0.13275</Pos>
+		<Drawable name="Duck" refframe="Duck">
 			<Polytope file="parts/rubber_duck" />
 		</Drawable>
 	</Frame>
@@ -47,7 +47,7 @@
 	</Frame> -->
 
 <!-- Walls for picking area -->
-	<Frame name="Wall1" refframe="Table" type="Fixed">
+	<!-- <Frame name="Wall1" refframe="Table" type="Fixed">
 		<RPY>0 0 0</RPY> <Pos>0.0 0.3065 0.17</Pos>
 		<Drawable name="Wall1" refframe="Wall1">
 			<Polytope file="parts/wall_1" />
@@ -73,7 +73,7 @@
 		<Drawable name="Wall4" refframe="Wall4">
 			<Polytope file="parts/wall_2" />
 		</Drawable>
-	</Frame>
+	</Frame> -->
 
 <!-- Cameras -->
 
