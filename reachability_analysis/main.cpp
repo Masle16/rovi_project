@@ -9,6 +9,8 @@
 USE_ROBWORK_NAMESPACE
 using namespace robwork;
 
+#define WC_FILE "../Workcell/Scene.wc.xml"
+
 /**
  * @brief showUsages
  */
@@ -127,7 +129,7 @@ std::vector<rw::math::Q> getCollisionFreeSolutions(rw::models::WorkCell::Ptr wc,
         }
     }
 
-//    // visualize them if there are any
+    // visualize them if there are any
 //    if (collisionFreeSolutions.size() > 0) {
 //        TimedStatePath tStatePath;
 //        double time=0;
@@ -173,11 +175,10 @@ int main(int argc, char *argv[]) {
     }
 
 
-    // load workcell
-    const std::string wc_file = "../../Project_WorkCell/Scene.wc.xml";
-    rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(wc_file);
+    // load workcell;
+    rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(WC_FILE);
     if (NULL == wc) {
-        RW_THROW("COULD NOT LOAD " + wc_file + " ... check path!");
+        RW_THROW("COULD NOT LOAD WORKCELL ... check path!");
         return -1;
     }
 
@@ -257,9 +258,9 @@ int main(int argc, char *argv[]) {
 //            solutions += collision_free_solutions.size();
 //        }
 
-//        // generate rwplay file
+        // generate rwplay file
 //        const std::string folder = "../rwplays_cylinder_top/";
-//        rwplay = folder + "_position" + std::to_string(i) + "_cylinder_0.0_0.56" + ".rwplay";
+//        rwplay = folder + "_position" + std::to_string(i) + "_cylinder_-0.36_0.56" + ".rwplay";
 
         // move cylinder
         rw::math::Transform3D<> cylinder_trans(cylinder_pos, cylinder_rot);

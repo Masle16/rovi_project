@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 set (CMAKE_CXX_STANDARD 11)
 # Project name
-project( SimulatedDepthSensor )
+project( simulated_depth_sensor )
 
 # Used for: Resolve absolute path names
 set(ROOT ${CMAKE_CURRENT_SOURCE_DIR})
@@ -31,11 +31,11 @@ link_directories(
 add_definitions(${PCL_DEFINITIONS})
 
 add_executable(
-    SimulatedDepthSensor
+    simulated_depth_sensor
     main.cpp
 )
 target_link_libraries(
-    SimulatedDepthSensor
+    simulated_depth_sensor
     ${PCL_LIBRARIES}
     ${OpenCV_LIBS}
     ${ROBWORK_LIBRARIES}

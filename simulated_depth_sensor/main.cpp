@@ -190,7 +190,7 @@ PointCloudT::Ptr euclideanCusterExtraction(PointCloudT::Ptr &cloud,
     tree->setInputCloud(cloud);
     std::vector<pcl::PointIndices> clusterIndices;
     pcl::EuclideanClusterExtraction<PointT> euclideanCluster;
-    euclideanCluster.setClusterTolerance(0.02);
+    euclideanCluster.setClusterTolerance(0.1);
     euclideanCluster.setMinClusterSize(0);
     euclideanCluster.setMaxClusterSize(25000);
     euclideanCluster.setInputCloud(cloud);
@@ -205,19 +205,19 @@ PointCloudT::Ptr euclideanCusterExtraction(PointCloudT::Ptr &cloud,
         cloudCluster->width = cloudCluster->points.size();
         cloudCluster->height = 1;
         cloudCluster->is_dense = true;
-        // show cluster
-        {
-            pcl::visualization::PCLVisualizer view("cluster");
-            view.addPointCloud<PointT>(cloudCluster, pcl::visualization::PointCloudColorHandlerCustom<PointT>(cloudCluster, 0, 255, 0),"cluster");
-            view.spin();
-        }
+//        // show cluster
+//        {
+//            pcl::visualization::PCLVisualizer view("cluster");
+//            view.addPointCloud<PointT>(cloudCluster, pcl::visualization::PointCloudColorHandlerCustom<PointT>(cloudCluster, 0, 255, 0),"cluster");
+//            view.spin();
+//        }
         std::cout << "\tCluster information -->" << std::endl;
         std::cerr << "\t" << cloudCluster->width * cloudCluster->height
                   << " data points ("
                   << pcl::getFieldsList(*cloudCluster)
                   << ")."
                   << std::endl;
-        if (cloudCluster->points.size() < 850 && cloudCluster->points.size() > 750) {
+        if (cloudCluster->points.size() < 950 && cloudCluster->points.size() > 800) {
             cloud = cloudCluster;
             break;
         }
@@ -370,6 +370,7 @@ std::vector<int> nearestMatchingFeature(pcl::PointCloud<HistT>::Ptr scene,
 Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene,
                                     PointCloudT::Ptr object) {
     // compute surface normals
+    std::cout << "\tcomputing surface normals.." << std::endl;
     {
         pcl::NormalEstimation<PointT, PointT> normalEsitmator;
         normalEsitmator.setKSearch(10);
@@ -382,10 +383,11 @@ Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene,
     }
 
     // compute spin images
+    std::cout << "\tcomputing spin images.." << std::endl;
     pcl::PointCloud<HistT>::Ptr sceneFeatures(new pcl::PointCloud<HistT>());
     pcl::PointCloud<HistT>::Ptr objectFeatures(new pcl::PointCloud<HistT>());
     {
-        pcl::SpinImageEstimation<PointT, PointT, HistT> spinEstimator;
+        pcl::SpinImageEstimation<PointT, PointT, HistT> spinEstimator(8, 0.5, 0);
         spinEstimator.setRadiusSearch(0.05);
         // object
         spinEstimator.setInputCloud(object);
@@ -398,6 +400,7 @@ Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene,
     }
 
     // find feature matches
+    std::cout << "\tfinding feature matches.." << std::endl;
     pcl::Correspondences correspondences(objectFeatures->size());
     {
         for (size_t i = 0; i < objectFeatures->size(); i++) {
@@ -406,14 +409,14 @@ Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene,
         }
     }
 
-    // show matches
-    {
-        pcl::visualization::PCLVisualizer view("Scene before preprocessing");
-        view.addPointCloud<PointT>(object, pcl::visualization::PointCloudColorHandlerCustom<PointT>(object, 255, 0, 0),"object");
-        view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-        view.addCorrespondences<PointT>(object, scene, correspondences, 1);
-        view.spin();
-    }
+//    // show matches
+//    {
+//        pcl::visualization::PCLVisualizer view("Scene before preprocessing");
+//        view.addPointCloud<PointT>(object, pcl::visualization::PointCloudColorHandlerCustom<PointT>(object, 255, 0, 0),"object");
+//        view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
+//        view.addCorrespondences<PointT>(object, scene, correspondences, 1);
+//        view.spin();
+//    }
 
     // create a kd-tree for scene
     pcl::search::KdTree<PointT> tree;
@@ -424,7 +427,7 @@ Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene,
     PointCloudT::Ptr objectAligned(new PointCloudT());
     float penalty = FLT_MAX;
     {
-        std::cout << "Starting RANSAC.." << std::endl;
+        std::cout << "\tStarting RANSAC.." << std::endl;
         auto timeStart = std::chrono::high_resolution_clock::now();
         pcl::common::UniformGenerator<int> gen(0, correspondences.size()-1);
         for (size_t i = 0; i < MAX_ITERATIONS; i++) {
@@ -478,11 +481,11 @@ Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene,
         // print timing
         auto timeEnd = std::chrono::high_resolution_clock::now();
         auto time = std::chrono::duration_cast<std::chrono::seconds>(timeEnd - timeStart);
-        std::cout << "\nExecution time for local alignment --> " << time.count() << " s" << std::endl;
+        std::cout << "\tExecution time for local alignment --> " << time.count() << " s" << std::endl;
         // print pose
-        std::cout << "Got the following pose:\n" << result << std::endl;
-        std::cout << "Inliers: " << inliers << std::endl;
-        std::cout << "RMSE: " << rmse << std::endl;
+        std::cout << "\tGot the following pose:\n" << result << std::endl;
+        std::cout << "\tInliers: " << inliers << std::endl;
+        std::cout << "\tRMSE: " << rmse << std::endl;
         return result;
     }
 
@@ -552,7 +555,7 @@ Eigen::Matrix4f findLocalAlignment(PointCloudT::Ptr scene,
     pcl::search::KdTree<PointT> tree;
     tree.setInputCloud(scene);
     PointCloudT::Ptr objectAligned(new PointCloudT(*object));
-    std::cout << "Starting ICP.." << std::endl;
+    std::cout << "\tStarting ICP.." << std::endl;
     auto timeStart = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < 50; i++) {
         // find the closest points
@@ -627,10 +630,8 @@ Eigen::Matrix4f findLocalAlignment(PointCloudT::Ptr scene,
 
 /**
  * @brief convertTransform3D2Matrix4
- * @param frame
- * @param input
- * @param output
- * @return
+ * @param frame : frame name in the Scene.wx.xml file
+ * @return : return the
  */
 Eigen::Matrix4f getTransform(const std::string &frameName) {
     Eigen::Matrix4f result = Eigen::Matrix4f::Identity();
@@ -668,9 +669,41 @@ Eigen::Matrix4f getTransform(const std::string &frameName) {
 
     return result;
 }
+
+/**
+ * @brief writeMatrix4f2txt
+ * @param matrix
+ */
+void writeMatrix4f2txt(const std::vector<Eigen::Matrix4f>& realPoses,
+                       const std::vector<Eigen::Matrix4f>& poseEstimations,
+                       const std::vector<std::chrono::seconds> &times) {
+    std::cout << "Writing data to files.." << std::endl;
+    std::ofstream file;
+
+    // real poses
+    file.open("../data/real_poses.txt");
+    for (std::size_t i = 0; i < realPoses.size(); i++)
+        file << realPoses[i] << "\n";
+    file.close();
+
+    // pose estimation
+    file.open("../data/pose_estimations.txt");
+    for (std::size_t i = 0; i < poseEstimations.size(); i++)
+        file << poseEstimations[i] << "\n";
+    file.close();
+
+    // time
+    file.open("../data/times.txt");
+    for (std::size_t i = 0; i < times.size(); i++)
+        file << times[i].count() << "\n";
+    file.close();
+}
+
 //---------------------------------------------------------
 
-// Main
+/*
+ * MAIN ENTRY POINT
+ */
 int main(int argc, char** argv) {
     std::cout << "\nProgram started\n" << std::endl;
 
@@ -679,169 +712,188 @@ int main(int argc, char** argv) {
     //---------------------------
     std::cout << "Point cloud preprocessing" << std::endl;
 
-    // load the point cloud
-    PointCloudT::Ptr scene(new PointCloudT);
-    std::string path = "../scanner25D_point_clouds/Scanner25D_0.pcd";
-    pcl::io::loadPCDFile(path, *scene);
+    std::vector<Eigen::Matrix4f> poseEstimations, realPoses;
+    std::vector<std::chrono::seconds> times;
+    for (std::size_t i = 0; i < 30; i++) {
+        // time start of method
+        auto timeStart = std::chrono::high_resolution_clock::now();
 
-    // show point cloud
-    {
-        pcl::visualization::PCLVisualizer view("Scene before preprocessing");
-        view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-        view.spin();
+        // load the point cloud
+        PointCloudT::Ptr scene(new PointCloudT);
+        std::string path = "../scanner25D_point_clouds/Scanner25D_" + std::to_string(i) + ".pcd";
+        pcl::io::loadPCDFile(path, *scene);
+
+    //    // show point cloud
+    //    {
+    //        pcl::visualization::PCLVisualizer view("Scene before preprocessing");
+    //        view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
+    //        view.spin();
+    //    }
+
+        // display point cloud info
+        std::cout << "Point cloud before preprocessing => " << std::endl;
+        PointT min_pt, max_pt;
+        pcl::getMinMax3D(*scene, min_pt, max_pt);
+        std::cout << "Max x: " << max_pt.x << std::endl;
+        std::cout << "Max y: " << max_pt.y << std::endl;
+        std::cout << "Max z: " << max_pt.z << std::endl;
+        std::cout << "Min x: " << min_pt.x << std::endl;
+        std::cout << "Min y: " << min_pt.y << std::endl;
+        std::cout << "Min z: " << min_pt.z << std::endl;
+        std::cerr << scene->width * scene->height
+                  << " data points ("
+                  << pcl::getFieldsList(*scene)
+                  << ")."
+                  << std::endl;
+
+        // filter point cloud
+        voxelGrid(scene, scene, 0.005);
+        std::cerr << "PointCloud after voxel grid: "
+                  << scene->width * scene->height
+                  << " data points ("
+                  << pcl::getFieldsList(*scene)
+                  << ")."
+                  << std::endl;
+
+    //    outlierRemoval(scene, scene);
+    //    std::cerr << "PointCloud after outlier removal filter: "
+    //              << scene->width * scene->height
+    //              << " data points ("
+    //              << pcl::getFieldsList(*scene)
+    //              << ")."
+    //              << std::endl;
+
+        spatialFilter(scene, scene);
+        std::cerr << "PointCloud after spatial filter: "
+                  << scene->width * scene->height
+                  << " data points ("
+                  << pcl::getFieldsList(*scene)
+                  << ")."
+                  << std::endl;
+
+    //    smoothing(scene, scene);
+    //    std::cerr << "PointCloud after spatial smoothing: "
+    //              << scene->width * scene->height
+    //              << " data points ("
+    //              << pcl::getFieldsList(*scene)
+    //              << ")."
+    //              << std::endl;
+
+        // remove plans in the scene
+        int nPoints = (int)scene->points.size();
+        while (scene->points.size() > (0.3 * nPoints)) {
+            scene = planarSegmentation(scene);
+        }
+        std::cerr << "PointCloud after planar segmentation: "
+                  << scene->width * scene->height
+                  << " data points ("
+                  << pcl::getFieldsList(*scene)
+                  << ")."
+                  << std::endl;
+
+        // save the new point cloud
+        pcl::io::savePCDFile("../cloud_filtered.pcd", *scene);
+
+        // load the generated object point cloud
+        PointCloudT::Ptr object(new PointCloudT);
+        pcl::io::loadPCDFile(OBJECT_PATH, *object);
+
+        // display point cloud info
+        std::cout << "Object point cloud before preprocessing => " << std::endl;
+        PointT minPt, maxPt;
+        pcl::getMinMax3D(*object, minPt, maxPt);
+        std::cout << "Max x: " << maxPt.x << std::endl;
+        std::cout << "Max y: " << maxPt.y << std::endl;
+        std::cout << "Max z: " << maxPt.z << std::endl;
+        std::cout << "Min x: " << minPt.x << std::endl;
+        std::cout << "Min y: " << minPt.y << std::endl;
+        std::cout << "Min z: " << minPt.z << std::endl;
+        std::cerr << object->width * object->height
+                  << " data points ("
+                  << pcl::getFieldsList(*object)
+                  << ")."
+                  << std::endl;
+
+        // filter object point cloud
+        voxelGrid(object, object, 0.005);
+        std::cerr << "object point cloud after voxel grid: "
+                  << object->width * object->height
+                  << " data points ("
+                  << pcl::getFieldsList(*object)
+                  << ")."
+                  << std::endl;
+
+        scene = euclideanCusterExtraction(scene, object);
+
+    //    // show intial state of scene and object
+    //    {
+    //        pcl::visualization::PCLVisualizer view("Scene before preprocessing");
+    //        view.addPointCloud<PointT>(object, pcl::visualization::PointCloudColorHandlerCustom<PointT>(object, 255, 0, 0),"object");
+    //        view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
+    //        view.spin();
+    //    }
+
+        //---------------------------
+        // POSE ESTIMATION 3D TO 3D
+        //---------------------------
+        std::cout << "Pose estimation 3D to 3D" << std::endl;
+
+        //---------------------------
+        // GLOBAL ALIGNMENT
+        //---------------------------
+        std::cout << "Global alignment.." << std::endl;
+
+        // find alignment
+        Eigen::Matrix4f poseGlobal = findGlobalAlignment(scene, object);
+        pcl::transformPointCloud(*object, *object, poseGlobal);
+    //    // show the state of the scene and the object
+    //    {
+    //        pcl::visualization::PCLVisualizer view("After global alignment");
+    //        view.addPointCloud<PointT>(object, pcl::visualization::PointCloudColorHandlerCustom<PointT>(object, 255, 0, 0),"object");
+    //        view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
+    //        view.spin();
+    //    }
+
+        //-----------------
+        // LOCAL ALIGNMENT
+        //-----------------
+        std::cout << "Local alignment.." << std::endl;
+        Eigen::Matrix4f poseLocal = findLocalAlignment(scene, object);
+        pcl::transformPointCloud(*object, *object, poseLocal);
+        std::cout << "Found transform after local alignment -->\n" << poseGlobal * poseLocal << std::endl;
+    //    // show the state of the scene and the object
+    //    {
+    //        pcl::visualization::PCLVisualizer view("After local alignment");
+    //        view.addPointCloud<PointT>(object, pcl::visualization::PointCloudColorHandlerCustom<PointT>(object, 255, 0, 0),"object");
+    //        view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
+    //        view.spin();
+    //    }
+
+        // get time of method
+        auto timeEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::seconds time = std::chrono::duration_cast<std::chrono::seconds>(timeEnd - timeStart);
+
+        // Real transform from the camera
+        Eigen::Matrix4f duckTransform = getTransform("Duck");
+        std::cout << "Duck transform -->\n" << duckTransform << std::endl;
+        Eigen::Matrix4f tableTransform = getTransform("Table");
+        //std::cout << "Table transform -->\n" << tableTransform << std::endl;
+        Eigen::Matrix4f worldTransform = getTransform("WORLD");
+        //std::cout << "World transform -->\n" << worldTransform << std::endl;
+        Eigen::Matrix4f scannerTransform = getTransform("Scanner25D");
+        //std::cout << "Scanner transform -->\n" << scannerTransform << std::endl;
+        Eigen::Matrix4f poseEstimation = tableTransform * worldTransform * scannerTransform * poseGlobal * poseLocal;
+        std::cout << "Transform found -->\n" << poseEstimation << std::endl;
+
+        // store data in vectors
+        realPoses.push_back(duckTransform);
+        poseEstimations.push_back(poseEstimation);
+        times.push_back(time);
+
     }
 
-    // display point cloud info
-    std::cout << "Point cloud before preprocessing => " << std::endl;
-    PointT min_pt, max_pt;
-    pcl::getMinMax3D(*scene, min_pt, max_pt);
-    std::cout << "Max x: " << max_pt.x << std::endl;
-    std::cout << "Max y: " << max_pt.y << std::endl;
-    std::cout << "Max z: " << max_pt.z << std::endl;
-    std::cout << "Min x: " << min_pt.x << std::endl;
-    std::cout << "Min y: " << min_pt.y << std::endl;
-    std::cout << "Min z: " << min_pt.z << std::endl;
-    std::cerr << scene->width * scene->height
-              << " data points ("
-              << pcl::getFieldsList(*scene)
-              << ")."
-              << std::endl;
-
-    // filter point cloud
-//    voxelGrid(scene, scene);
-//    std::cerr << "PointCloud after voxel grid: "
-//              << scene->width * scene->height
-//              << " data points ("
-//              << pcl::getFieldsList(*scene)
-//              << ")."
-//              << std::endl;
-
-//    outlierRemoval(scene, scene);
-//    std::cerr << "PointCloud after outlier removal filter: "
-//              << scene->width * scene->height
-//              << " data points ("
-//              << pcl::getFieldsList(*scene)
-//              << ")."
-//              << std::endl;
-
-    spatialFilter(scene, scene);
-    std::cerr << "PointCloud after spatial filter: "
-              << scene->width * scene->height
-              << " data points ("
-              << pcl::getFieldsList(*scene)
-              << ")."
-              << std::endl;
-
-//    smoothing(scene, scene);
-//    std::cerr << "PointCloud after spatial smoothing: "
-//              << scene->width * scene->height
-//              << " data points ("
-//              << pcl::getFieldsList(*scene)
-//              << ")."
-//              << std::endl;
-
-    // remove plans in the scene
-    int i = 0, nPoints = (int)scene->points.size();
-    while (scene->points.size() > 0.1 * nPoints) {
-        scene = planarSegmentation(scene);
-    }
-    std::cerr << "PointCloud after planar segmentation: "
-              << scene->width * scene->height
-              << " data points ("
-              << pcl::getFieldsList(*scene)
-              << ")."
-              << std::endl;
-
-    // save the new point cloud
-    pcl::PCDWriter writer;
-    writer.write<PointT>("../cloud_filtered.pcd", *scene, false);
-
-    // load the generated object point cloud
-    PointCloudT::Ptr object(new PointCloudT);
-    pcl::io::loadPCDFile(OBJECT_PATH, *object);
-
-    // display point cloud info
-    std::cout << "Object point cloud before preprocessing => " << std::endl;
-    PointT minPt, maxPt;
-    pcl::getMinMax3D(*object, minPt, maxPt);
-    std::cout << "Max x: " << maxPt.x << std::endl;
-    std::cout << "Max y: " << maxPt.y << std::endl;
-    std::cout << "Max z: " << maxPt.z << std::endl;
-    std::cout << "Min x: " << minPt.x << std::endl;
-    std::cout << "Min y: " << minPt.y << std::endl;
-    std::cout << "Min z: " << minPt.z << std::endl;
-    std::cerr << object->width * object->height
-              << " data points ("
-              << pcl::getFieldsList(*object)
-              << ")."
-              << std::endl;
-
-    // filter object point cloud
-    voxelGrid(object, object, 0.001);
-    std::cerr << "object point cloud after voxel grid: "
-              << object->width * object->height
-              << " data points ("
-              << pcl::getFieldsList(*object)
-              << ")."
-              << std::endl;
-
-    scene = euclideanCusterExtraction(scene, object);
-
-    // show intial state of scene and object
-    {
-        pcl::visualization::PCLVisualizer view("Scene before preprocessing");
-        view.addPointCloud<PointT>(object, pcl::visualization::PointCloudColorHandlerCustom<PointT>(object, 255, 0, 0),"object");
-        view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-        view.spin();
-    }
-
-
-    //---------------------------
-    // POSE ESTIMATION 3D TO 3D
-    //---------------------------
-    std::cout << "Pose estimation 3D to 3D" << std::endl;
-
-    //---------------------------
-    // GLOBAL ALIGNMENT
-    //---------------------------
-    std::cout << "Global alignment.." << std::endl;
-
-    // find alignment
-    Eigen::Matrix4f poseGlobal = findGlobalAlignment(scene, object);
-    pcl::transformPointCloud(*object, *object, poseGlobal);
-    // show the state of the scene and the object
-    {
-        pcl::visualization::PCLVisualizer view("After global alignment");
-        view.addPointCloud<PointT>(object, pcl::visualization::PointCloudColorHandlerCustom<PointT>(object, 255, 0, 0),"object");
-        view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-        view.spin();
-    }
-
-    //-----------------
-    // LOCAL ALIGNMENT
-    //-----------------
-    std::cout << "Local alignment.." << std::endl;
-    Eigen::Matrix4f poseLocal = findLocalAlignment(scene, object);
-    pcl::transformPointCloud(*object, *object, poseLocal);
-    std::cout << "Found transform after local alignment -->\n" << poseGlobal * poseLocal << std::endl;
-    // show the state of the scene and the object
-    {
-        pcl::visualization::PCLVisualizer view("After local alignment");
-        view.addPointCloud<PointT>(object, pcl::visualization::PointCloudColorHandlerCustom<PointT>(object, 255, 0, 0),"object");
-        view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-        view.spin();
-    }
-
-    // Real transform from the camera
-    Eigen::Matrix4f duckTransform = getTransform("Duck");
-    std::cout << "Duck transform -->\n" << duckTransform << std::endl;
-    Eigen::Matrix4f tableTransform = getTransform("Table");
-    //std::cout << "Table transform -->\n" << tableTransform << std::endl;
-    Eigen::Matrix4f worldTransform = getTransform("WORLD");
-    //std::cout << "World transform -->\n" << worldTransform << std::endl;
-    Eigen::Matrix4f scannerTransform = getTransform("Scanner25D");
-    //std::cout << "Scanner transform -->\n" << scannerTransform << std::endl;
-    std::cout << "Transform found -->\n" << tableTransform * worldTransform * scannerTransform * poseGlobal * poseLocal << std::endl;
+    // save data
+    writeMatrix4f2txt(realPoses, poseEstimations, times);
 
     std::cout << "\nProgram ended\n" << std::endl;
     return 0;

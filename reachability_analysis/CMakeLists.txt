@@ -2,7 +2,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6.0)
 
 # The name of the project
-PROJECT(ReachabilityAnalysis)
+PROJECT(reachability_analysis)
 MESSAGE(${PROJECT_NAME} ":")
 
 # Used to resolve absolute path names
@@ -33,7 +33,7 @@ LINK_DIRECTORIES( ${ROBWORK_LIBRARY_DIRS} )
 SET(SrcFiles main.cpp)
 
 # The shared library to build:
-ADD_EXECUTABLE(ReachabilityAnalysis ${SrcFiles})
-TARGET_LINK_LIBRARIES(ReachabilityAnalysis ${ROBWORK_LIBRARIES})
+ADD_EXECUTABLE(reachability_analysis ${SrcFiles})
+TARGET_LINK_LIBRARIES(reachability_analysis ${ROBWORK_LIBRARIES})
 
 MESSAGE(${PROJECT_NAME} " done!")
