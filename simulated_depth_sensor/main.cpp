@@ -183,14 +183,18 @@ PointCloudT::Ptr planarSegmentation(PointCloudT::Ptr &cloud) {
     return result;
 }
 
-PointCloudT::Ptr euclideanCusterExtraction(PointCloudT::Ptr &cloud,
-                                           const PointCloudT::Ptr &object) {
+/**
+ * @brief euclideanCusterExtraction :
+ * @param cloud : the scene from the Scanner25D
+ * @return : a new scene with the cluster which muchly resembles the duck
+ */
+PointCloudT::Ptr euclideanCusterExtraction(PointCloudT::Ptr &cloud) {
     //PointCloudT::Ptr result(new PointCloudT);
     pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
     tree->setInputCloud(cloud);
     std::vector<pcl::PointIndices> clusterIndices;
     pcl::EuclideanClusterExtraction<PointT> euclideanCluster;
-    euclideanCluster.setClusterTolerance(0.1);
+    euclideanCluster.setClusterTolerance(0.04);
     euclideanCluster.setMinClusterSize(0);
     euclideanCluster.setMaxClusterSize(25000);
     euclideanCluster.setInputCloud(cloud);
@@ -217,7 +221,7 @@ PointCloudT::Ptr euclideanCusterExtraction(PointCloudT::Ptr &cloud,
                   << pcl::getFieldsList(*cloudCluster)
                   << ")."
                   << std::endl;
-        if (cloudCluster->points.size() < 950 && cloudCluster->points.size() > 800) {
+        if (cloudCluster->points.size() < 925 && cloudCluster->points.size() > 750) {
             cloud = cloudCluster;
             break;
         }
@@ -674,7 +678,7 @@ Eigen::Matrix4f getTransform(const std::string &frameName) {
  * @brief writeMatrix4f2txt
  * @param matrix
  */
-void writeMatrix4f2txt(const std::vector<Eigen::Matrix4f>& realPoses,
+void writeData2File(const std::vector<Eigen::Matrix4f>& realPoses,
                        const std::vector<Eigen::Matrix4f>& poseEstimations,
                        const std::vector<std::chrono::seconds> &times) {
     std::cout << "Writing data to files.." << std::endl;
@@ -722,6 +726,7 @@ int main(int argc, char** argv) {
         PointCloudT::Ptr scene(new PointCloudT);
         std::string path = "../scanner25D_point_clouds/Scanner25D_" + std::to_string(i) + ".pcd";
         pcl::io::loadPCDFile(path, *scene);
+        std::cout << "Processing file: " << path << " number " << i << " / 30" << std::endl;
 
     //    // show point cloud
     //    {
@@ -781,10 +786,19 @@ int main(int argc, char** argv) {
 
         // remove plans in the scene
         int nPoints = (int)scene->points.size();
-        while (scene->points.size() > (0.3 * nPoints)) {
+        while (scene->points.size() > (0.15 * nPoints)) {
             scene = planarSegmentation(scene);
         }
         std::cerr << "PointCloud after planar segmentation: "
+                  << scene->width * scene->height
+                  << " data points ("
+                  << pcl::getFieldsList(*scene)
+                  << ")."
+                  << std::endl;
+
+
+        scene = euclideanCusterExtraction(scene);
+        std::cerr << "PointCloud after cluster extration: "
                   << scene->width * scene->height
                   << " data points ("
                   << pcl::getFieldsList(*scene)
@@ -823,8 +837,6 @@ int main(int argc, char** argv) {
                   << ")."
                   << std::endl;
 
-        scene = euclideanCusterExtraction(scene, object);
-
     //    // show intial state of scene and object
     //    {
     //        pcl::visualization::PCLVisualizer view("Scene before preprocessing");
@@ -861,17 +873,18 @@ int main(int argc, char** argv) {
         Eigen::Matrix4f poseLocal = findLocalAlignment(scene, object);
         pcl::transformPointCloud(*object, *object, poseLocal);
         std::cout << "Found transform after local alignment -->\n" << poseGlobal * poseLocal << std::endl;
-    //    // show the state of the scene and the object
-    //    {
-    //        pcl::visualization::PCLVisualizer view("After local alignment");
-    //        view.addPointCloud<PointT>(object, pcl::visualization::PointCloudColorHandlerCustom<PointT>(object, 255, 0, 0),"object");
-    //        view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-    //        view.spin();
-    //    }
+//        // show the state of the scene and the object
+//        {
+//            pcl::visualization::PCLVisualizer view("After local alignment");
+//            view.addPointCloud<PointT>(object, pcl::visualization::PointCloudColorHandlerCustom<PointT>(object, 255, 0, 0),"object");
+//            view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
+//            view.spin();
+//        }
 
         // get time of method
         auto timeEnd = std::chrono::high_resolution_clock::now();
         std::chrono::seconds time = std::chrono::duration_cast<std::chrono::seconds>(timeEnd - timeStart);
+        std::cout << "Execution time: " << time.count() << std::endl;
 
         // Real transform from the camera
         Eigen::Matrix4f duckTransform = getTransform("Duck");
@@ -889,11 +902,10 @@ int main(int argc, char** argv) {
         realPoses.push_back(duckTransform);
         poseEstimations.push_back(poseEstimation);
         times.push_back(time);
-
     }
 
     // save data
-    writeMatrix4f2txt(realPoses, poseEstimations, times);
+    writeData2File(realPoses, poseEstimations, times);
 
     std::cout << "\nProgram ended\n" << std::endl;
     return 0;
