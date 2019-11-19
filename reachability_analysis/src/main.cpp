@@ -9,7 +9,7 @@
 USE_ROBWORK_NAMESPACE
 using namespace robwork;
 
-#define WC_FILE "../Workcell/Scene.wc.xml"
+#define WC_FILE "../../workcell/Scene.wc.xml"
 
 /**
  * @brief showUsages
@@ -33,7 +33,7 @@ void save2file(const std::vector<float> &x,
     if (x.size() != y.size() && y.size() != solutions.size()) { return; }
 
     // write to file
-    //std::string file_path = "../data_cylinder_top.txt";
+    //std::string file_path = "../../data_cylinder_top.txt";
     std::ofstream my_file;
     my_file.open(file_path);
     for (unsigned int i = 0; i < x.size(); i++) {
