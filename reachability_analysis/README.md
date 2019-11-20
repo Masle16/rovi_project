@@ -15,6 +15,16 @@ Similar as in programming exercise 5, you are asked to determine the best mounti
 
 After you conclude the study, pick the best location and give a description why this is the best position.
 
+## Code
+
+The source code for generating the data to [cylinder_side](cylinder_side) and [cylinder_top](cylinder_top) is located in [source code](src/main.cpp). To run the project go to the folder [build](src/build) and run:
+
+```cmake
+cmake ..
+make
+./reachability_analysis
+```
+
 ## Results
 
 The figures shown are contain in [figures](figures).
@@ -32,15 +42,7 @@ The figures shown are contain in [figures](figures).
 ![final_robot_position1](figures/final_robot_position1.png)
 ![final_robot_position3](figures/final_robot_position2.png)
 ![final_robot_position3](figures/final_robot_position3.png)
+
+### Home position
+
 ![home_position](figures/home_position.png)
-
-## Code
-
-The source code for generating the data to [cylinder_side](cylinder_side) and [cylinder_top](cylinder_top) is located in [source code](src/main.cpp). To run the project go to the folder [build](src/build) and run:
-
-```cmake
-cmake ..
-make
-./reachability_analysis
-```
-
