@@ -21,3 +21,5 @@ The reachability analysis is located in [reachability_analysis](reachability_ana
 ### Simulated Depth Sensor
 
 The simulated depth sensor method is located in [simulated_depth_sensor](simulated_depth_sensor), this folder contains the [code](simulated_depth_sensor/src/main.cpp), the [dataprocessing](simulated_depth_sensor/analysis_of_results.m) and the [figures for the report](simulated_depth_sensor/figures). Further description can be found in the [README](simulated_depth_sensor/README.md).
+
+## Combination
