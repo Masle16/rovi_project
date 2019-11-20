@@ -10,11 +10,11 @@ The reachability analysis is located in [reachability_analysis](reachability_ana
 
 ### Robot Motion Planing
 
-#### Point to Point Interpolation
+**Point to Point Interpolation**
 
-#### Point to Point Interpolation with Parabolic Blend
+**Point to Point Interpolation with Parabolic Blend**
 
-#### Rapidly Random Trees Connect (RRT Connect)
+**Rapidly Random Trees Connect (RRT Connect)**
 
 ## Vision
 
