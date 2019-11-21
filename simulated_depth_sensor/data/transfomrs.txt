@@ -1,6 +1,0 @@
-Table transform:
-Pos: 0 0 -0.1 RPY: 0 0 0
-World transform:
-Pos: 0 0 0 RPY: 0 -0 0
-Scanner transform:
-Pos: 0 1.033 1.325 RPY: 0 0 -0.436332

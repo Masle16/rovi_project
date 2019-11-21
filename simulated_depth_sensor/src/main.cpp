@@ -206,9 +206,9 @@ PointCloudT::Ptr euclideanCusterExtraction(PointCloudT::Ptr &cloud) {
         for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); pit++) {
             cloudCluster->points.push_back(cloud->points[*pit]);
         }
-//        cloudCluster->width = cloudCluster->points.size();
-//        cloudCluster->height = 1;
-//        cloudCluster->is_dense = true;
+       cloudCluster->width = cloudCluster->points.size();
+       cloudCluster->height = 1;
+       cloudCluster->is_dense = true;
 //        // show cluster
 //        {
 //            pcl::visualization::PCLVisualizer view("cluster");
@@ -555,30 +555,6 @@ Eigen::Matrix4f findLocalAlignment(PointCloudT::Ptr scene,
     std::cout << "Inliers: " << inliers << std::endl;
     std::cout << "RMSE: " << rmse << std::endl;
     return result;
-
-//    // for each object point p, find the nearest scene point q
-//    pcl::search::KdTree<pcl::PointXYZ> kdTree;
-//    kdTree.setInputCloud(scene);
-//    int k = 1;
-//    std::vector<int> kIndices(k);
-//    std::vector<float> kSqrDist(k);
-//    std::vector<int> sceneIdx, objectIdx;
-//    auto timeStart = std::chrono::high_resolution_clock::now();
-//    for (unsigned int i = 0; i < object->points.size(); i++) {
-//        pcl::PointXYZ searchPoint = object->points[i];
-//        //int nearestNeighbor = kdTree.nearestKSearch(searchPoint, k, kIndices, kSqrDist);
-//        kdTree.nearestKSearch(searchPoint, k, kIndices, kSqrDist);
-//        if (kSqrDist[0] < ALIGNMENT_THRESHOLD) {
-//            sceneIdx.push_back(kIndices[0]);
-//            objectIdx.push_back(i);
-//        }
-//    }
-//    // use all (p, q) pairs to estiamte T using the Kabsch algorithm
-//    pcl::registration::TransformationEstimationSVD<pcl::PointXYZ, pcl::PointXYZ> svd;
-//    svd.estimateRigidTransformation(*object, objectIdx, *scene, sceneIdx, output);
-//    auto timeEnd = std::chrono::high_resolution_clock::now();
-//    auto time = std::chrono::duration_cast<std::chrono::seconds>(timeEnd - timeStart);
-//    std::cout << "\nExecution time for local alignment => " << time.count() << " s" << std::endl;
 }
 
 rw::math::Transform3D<> getTransform(const std::string &frameName) {
@@ -627,26 +603,28 @@ rw::math::Transform3D<> matrix4f2transform(const Eigen::Matrix4f matrix) {
  * @brief writeMatrix4f2txt
  * @param matrix
  */
-void writeData2File(const std::vector<rw::math::Transform3D<>>& poseEstimations,
+void writeData2File(const std::vector<rw::math::Transform3D<>>& globalPoses,
+                    const std::vector<rw::math::Transform3D<>>& localPoses,
                     const std::vector<std::chrono::seconds> &times) {
     std::cout << "Writing data to files.." << std::endl;
     std::ofstream file;
 
     // pose estimation
-    file.open("../../data/pose_estimations.txt");
-    for (std::size_t i = 0; i < poseEstimations.size(); i++) {
-        rw::math::Vector3D<> pos = poseEstimations[i].P();
-        rw::math::RPY<> rpy = rw::math::RPY<>(poseEstimations[i].R());
-        file << "Pos: " << pos(0) << " " << pos(1) << " " << pos(2)
-             << " RPY: " << rpy(0) << " " << rpy(1) << " " << rpy(2)
-             << "\n";
+    file.open("../../data/data.txt");
+    for (std::size_t i = 0; i < times.size(); i++) {
+        // Global
+        rw::math::Vector3D<> posGlobal = globalPoses[i].P();
+        rw::math::RPY<> rpyGlobal = rw::math::RPY<>(globalPoses[i].R());
+        // Local
+        rw::math::Vector3D<> posLocal = localPoses[i].P();
+        rw::math::RPY<> rpyLocal = rw::math::RPY<>(localPoses[i].R());
+        file << 0               << " " // noise
+             << times[i].count()<< " " // time
+             << posGlobal(0)    << " " << posGlobal(1)  << " " << posGlobal(2)  << " "   // pos global
+             << rpyGlobal(0)    << " " << rpyGlobal(1)  << " " << rpyGlobal(2)  << " "   // rpy global
+             << posLocal(0)     << " " << posLocal(1)   << " " << posLocal(2)   << " "   // pos local
+             << rpyLocal(0)     << " " << rpyLocal(1)   << " " << rpyLocal(2)   << "\n"; // rpy local
     }
-    file.close();
-
-    // time
-    file.open("../../data/times.txt");
-    for (std::size_t i = 0; i < times.size(); i++)
-        file << times[i].count() << "\n";
     file.close();
 }
 
@@ -662,16 +640,13 @@ void writeTransforms2File(const rw::math::Transform3D<>& tableT,
     rw::math::Vector3D<> tablePos = tableT.P(), worldPos = worldT.P(), scannerPos = scannerT.P();
     rw::math::RPY<> tableRPY = rw::math::RPY<>(tableT.R()), worldRPY = rw::math::RPY<>(worldT.R()), scannerRPY = rw::math::RPY<>(scannerT.R());
     std::ofstream file;
-    file.open("../../data/transfomrs.txt");
-    file << "Table transform:\n"
-         << "Pos: " << tablePos(0) << " " << tablePos(1) << " " << tablePos(2)
-         << " RPY: " << tableRPY(0) << " " << tableRPY(1) << " " << tableRPY(2)
-         << "\nWorld transform:\n"
-         << "Pos: " << worldPos(0) << " " << worldPos(1) << " " << worldPos(2)
-         << " RPY: " << worldRPY(0) << " " << worldRPY(1) << " " << worldRPY(2)
-         << "\nScanner transform:\n"
-         << "Pos: " << scannerPos(0) << " " << scannerPos(1) << " " << scannerPos(2)
-         << " RPY: " << scannerRPY(0) << " " << scannerRPY(1) << " " << scannerRPY(2);
+    file.open("../../data/transforms.txt");
+    file << tablePos(0)     << " " << tablePos(1)   << " " << tablePos(2)   << " "
+         << tableRPY(0)     << " " << tableRPY(1)   << " " << tableRPY(2)   << "\n"
+         << worldPos(0)     << " " << worldPos(1)   << " " << worldPos(2)   << " "
+         << worldRPY(0)     << " " << worldRPY(1)   << " " << worldRPY(2)   << "\n"
+         << scannerPos(0)   << " " << scannerPos(1) << " " << scannerPos(2) << " "
+         << scannerRPY(0)   << " " << scannerRPY(1) << " " << scannerRPY(2) << "\n";
     file.close();
 }
 
@@ -680,13 +655,14 @@ void writeTransforms2File(const rw::math::Transform3D<>& tableT,
  * @param object
  * @param path2scene
  */
-void saveSceneWithObject(const Eigen::Matrix4f transform,
+void saveSceneWithObject(const std::vector<Eigen::Matrix4f> Ts,
                          const PointCloudT scene,
                          const std::string& fileName) {
     // load scene
     PointCloudT object;
     pcl::io::loadPCDFile(OBJECT_PATH, object);
-    pcl::transformPointCloud(object, object, transform);
+    for (unsigned int i = 0; i < Ts.size(); i++)
+        pcl::transformPointCloud(object, object, Ts[i]);
     // merge point clouds
     PointCloudT newCloud;
     newCloud += scene;
@@ -707,7 +683,7 @@ int main(int argc, char** argv) {
     //---------------------------
     std::cout << "Point cloud preprocessing" << std::endl;
 
-    std::vector<rw::math::Transform3D<>> poseEstimations;
+    std::vector<rw::math::Transform3D<>> globalPoses, localPoses;
     std::vector<std::chrono::seconds> times;
     for (std::size_t i = 0; i < 30; i++) {
         // time start of method
@@ -877,31 +853,28 @@ int main(int argc, char** argv) {
         std::chrono::seconds time = std::chrono::duration_cast<std::chrono::seconds>(timeEnd - timeStart);
         std::cout << "Execution time: " << time.count() << std::endl;
 
-        //rw::math::Transform3D<> duckT = getTransform("Duck");
-        //std::cout << "Duck transform -->\n" << duckT << std::endl;
-//        rw::math::Transform3D<> tableT = getTransform("Table");
-//        //std::cout << "Table transform -->\n" << tableTransform << std::endl;
-//        rw::math::Transform3D<> worldT = getTransform("WORLD");
-//        //std::cout << "World transform -->\n" << worldTransform << std::endl;
-//        rw::math::Transform3D<> scannerT = getTransform("Scanner25D");
-//        //std::cout << "Scanner transform -->\n" << scannerTransform << std::endl;
-        rw::math::Transform3D<> poseEstimation = matrix4f2transform(poseGlobal) * matrix4f2transform(poseLocal);
-        std::cout << "Transform found -->\n" << poseEstimation << std::endl;
+//        rw::math::Transform3D<> poseEstimation = matrix4f2transform(poseGlobal) * matrix4f2transform(poseLocal);
+//        std::cout << "Transform found -->\n" << poseEstimation << std::endl;
 
         // store data in vectors
-        poseEstimations.push_back(poseEstimation);
+        globalPoses.push_back(matrix4f2transform(poseGlobal));
+        localPoses.push_back(matrix4f2transform(poseLocal));
         times.push_back(time);
 
-        // save pcd file of scene
-        const std::string fileName = "../../data/point_cloud_estimations/Scanner25D_" + std::to_string(i) + ".pcd";
-        PointCloudT initialScene;
-        pcl::io::loadPCDFile(path, initialScene);
-        saveSceneWithObject(poseGlobal * poseLocal, initialScene, fileName);
+//        // save pcd file of scene
+//        const std::string fileName = "../../data/point_cloud_estimations/Scanner25D_" + std::to_string(i) + ".pcd";
+//        PointCloudT initialScene;
+//        pcl::io::loadPCDFile(path, initialScene);
+//        std::vector<Eigen::Matrix4f> Ts = {
+//            poseGlobal,
+//            poseLocal
+//        };
+//        saveSceneWithObject(Ts, initialScene, fileName);
     }
 
     // save data
-    writeData2File(poseEstimations, times);
-    writeTransforms2File(getTransform("Table"), getTransform("World"), getTransform("Scanner25D"));
+    writeData2File(globalPoses, localPoses, times);
+    writeTransforms2File(getTransform("Table"), getTransform("WORLD"), getTransform("Scanner25D"));
 
     std::cout << "\nProgram ended\n" << std::endl;
     return 0;

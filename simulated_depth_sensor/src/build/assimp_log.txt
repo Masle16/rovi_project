@@ -1,8 +1,8 @@
 Info,  T0: this is my info call
-Info,  T0: Load /home/mathi/Documents/rovi/rovi_project/simulated_depth_sensor/simulated_depth_sensor/build/../../workcell/wsg50/geometry/FingerWeiss50_tip.obj
+Info,  T0: Load /home/mathi/Documents/rovi/rovi_project/simulated_depth_sensor/src/build/../../workcell/wsg50/geometry/FingerWeiss50_tip.obj
 Debug, T0: Assimp 3.3.176583636 amd64 gcc shared singlethreaded
 Info,  T0: Found a matching importer for this file format: Wavefront Object Importer.
-Info,  T0: Import root directory is '/home/mathi/Documents/rovi/rovi_project/simulated_depth_sensor/simulated_depth_sensor/build/../../workcell/wsg50/geometry/'
+Info,  T0: Import root directory is '/home/mathi/Documents/rovi/rovi_project/simulated_depth_sensor/src/build/../../workcell/wsg50/geometry/'
 Info,  T0: Entering post processing pipeline
 Debug, T0: Generate spatially-sorted vertex cache
 Debug, T0: JoinVerticesProcess begin
