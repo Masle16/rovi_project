@@ -9,7 +9,7 @@
 
 	<Frame name="URReference" refframe="Table" type="Movable">
 		<!-- <RPY>0 0 0</RPY> <Pos>0 0 0.11</Pos> -->
-		<RPY>0 0 0</RPY> <Pos>0.2 0 0.11</Pos>
+		<RPY>205 0 0</RPY> <Pos>0.2 0 0.11</Pos>
 	</Frame>
 	<Include file="UR5/UR-6-85-5-A/Device.wc.xml" />
 
@@ -56,7 +56,7 @@
 		</Drawable>
 	</Frame>
 
-	<Frame name="Trex" refframe="Table" type="Movable" daf="true">
+	<!-- <Frame name="Trex" refframe="Table" type="Movable" daf="true">
 		<RPY>0 0 90</RPY> <Pos>-0.25 0.474 0.1535</Pos>
 		<Drawable name="Trex" refframe="Trex">
 			<Polytope file="parts/Trex" />
@@ -68,10 +68,10 @@
 		<Drawable name="GardenGnome" refframe="GardenGnome">
 			<Polytope file="parts/Garden_gnome" />
 		</Drawable>
-	</Frame>
+	</Frame> -->
 
 	<!-- Walls for picking area -->
-	<Frame name="Wall1" refframe="Table" type="Fixed">
+	<!-- <Frame name="Wall1" refframe="Table" type="Fixed">
 		<RPY>0 0 90</RPY> <Pos>0.0 0.3065 0.17</Pos>
 		<Drawable name="Wall1" refframe="Wall1">
 			<Polytope file="parts/Wall_1" />
@@ -97,7 +97,7 @@
 		<Drawable name="Wall4" refframe="Wall4">
 			<Polytope file="parts/Wall_2" />
 		</Drawable>
-	</Frame>
+	</Frame> -->
 
 	<!-- Cameras -->
 	<!-- <Frame name="Camera_Right" refframe="WORLD" type="Movable">
