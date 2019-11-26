@@ -17,7 +17,7 @@ scannerRpy = transforms(3,4:6);
 scannerT = [eul2rotm(scannerRpy) scannerPos'; 0 0 0 1];
 
 % Estimates poses
-N=270;
+N=150;
 estimatedPoses = load('spin_imgs_radis.txt');
 radius = estimatedPoses(:,1);
 time = estimatedPoses(:,2);
@@ -51,7 +51,7 @@ for i = 1:N
     % estimated pose
     globalT = [eul2rotm(globalRpy(i,:)) globalPos(i,:)'; 0 0 0 1];
     localT = [eul2rotm(localRpy(i,:)) localPos(i,:)'; 0 0 0 1];
-    pose = globalT * localT;
+    pose = globalT;
     
     % worldT * tableT * realT = worldT * scannerT * globalT * localT
     % realT = tableT^(-1) * scannerT * globalT * localT
