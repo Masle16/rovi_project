@@ -1,14 +1,13 @@
 <WorkCell name="Scene">
 
-	<Frame name="Table" refframe="WORLD" type="Fixed">
+	<!-- <Frame name="Table" refframe="WORLD" type="Fixed">
 		<RPY>0 0 0</RPY> <Pos>0 0 -0.1</Pos>		
 		 <Drawable name="Table" refframe="Table">
          <Polytope file="table/Sigmund_table" />
      </Drawable>
-	</Frame>
+	</Frame> -->
 
-	<Frame name="URReference" refframe="Table" type="Movable">
-		<!-- <RPY>0 0 0</RPY> <Pos>0 0 0.11</Pos> -->
+	<Frame name="URReference" refframe="WORLD" type="Movable">
 		<RPY>205 0 0</RPY> <Pos>0.2 0 0.11</Pos>
 	</Frame>
 	<Include file="UR5/UR-6-85-5-A/Device.wc.xml" />
@@ -24,12 +23,12 @@
 		<RPY>0 0 0</RPY> <Pos>0 0 0.15</Pos>
 	</Frame>
 	
-	<Frame name="RubberDuck" refframe="Table" type="Movable" daf="true">
+	<!-- <Frame name="RubberDuck" refframe="Table" type="Movable" daf="true">
 		<RPY>0 0 0</RPY> <Pos>0.25 0.474 0.133</Pos>
 		<Drawable name="RubberDuck" refframe="RubberDuck">
 			<Polytope file="parts/rubber_duck" />
 		</Drawable>
-	</Frame>
+	</Frame> -->
 
 	<!-- <Frame name="Trex" refframe="Table" type="Movable" daf="true">
 		<RPY>0 0 0</RPY> <Pos>-0.25 0.474 0.1535</Pos>

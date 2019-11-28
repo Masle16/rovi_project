@@ -38,6 +38,10 @@
 #include <pcl/registration/correspondence_rejection_sample_consensus.h>
 #include <pcl/registration/correspondence_rejection_trimmed.h>
 #include <pcl/registration/correspondence_rejection_var_trimmed.h>
+#include <pcl/features/normal_3d_omp.h>
+#include <pcl/features/fpfh_omp.h>
+#include <pcl/registration/sample_consensus_prerejective.h>
+#include <pcl/common/time.h>
 
 //---------------------------------------------------------
 
@@ -53,43 +57,47 @@
 typedef pcl::PointNormal PointT;
 typedef pcl::PointCloud<pcl::PointNormal> PointCloudT;
 typedef pcl::Histogram<153> HistT;
+typedef pcl::FPFHSignature33 FeatureT;
+typedef pcl::PointCloud<FeatureT> FeatureCloudT;
+typedef pcl::FPFHEstimationOMP<PointT, PointT, FeatureT> FeatureEstimationT;
+typedef pcl::visualization::PointCloudColorHandlerCustom<PointT> ColorHandlerT;
 
 //---------------------------------------------------------
 
 // GLOBAL VARIABLES
 // voxel grid
-float LEAF_SIZE = 1e-2;
+float LEAF_SIZE = 1e-2f;
 
 // outlier removal
-float MEAN = 200; // number of neighbors
-float STD_DEV = 0.1; // distance between
+float MEAN = 200.0f; // number of neighbors
+float STD_DEV = 0.1f; // distance between
 
 // spatial filter
-float X_MIN = -0.5, X_MAX = 0.5;
-float Y_MIN = -0.3, Y_MAX = 0.1625;
-float Z_MIN = -1.5, Z_MAX = 0;
+float X_MIN = -0.5f, X_MAX = 0.5f;
+float Y_MIN = -0.3f, Y_MAX = 0.1625f;
+float Z_MIN = -1.5f, Z_MAX = 0.0f;
 
 // smoothing
-unsigned int SMOOTHING_POLY_ORDER = 2;
-float SMOOTHING_RADIUS = 0.03;
+unsigned int SMOOTHING_POLY_ORDER = 4;
+float SMOOTHING_RADIUS = 0.01f; // 0.05
 
 // cluster extraction
 unsigned int CLUSTER_MIN_SIZE = 750; // 750
 unsigned int CLUSTER_MAX_SIZE = 1500; // 950
-float CLUSTER_RADIUS = 0.01;
+float CLUSTER_RADIUS = 0.01f; // 0.01
 
 // global alignment
-//std::size_t GLOBAL_ITERATIONS = 20000;
-std::size_t NUMBER_INLIERS = 240; // 215
-float SPIN_IMG_RADIUS = 0.05; // see sin_imgs_radius_analysis.m
-float GLOBAL_THRESH = 0.0001; //2.5e-5; // see thresh_analysis.m
+std::size_t MAX_ITERATIONS = 50000;
+std::size_t NUMBER_INLIERS = 260; // 240
+float SPIN_IMG_RADIUS = 0.05f; // 0.05 // see sin_imgs_radius_analysis.m
+float GLOBAL_THRESH = 0.0001f; //2.5e-5; // see thresh_analysis.m
 
 // local alignment
-std::size_t LOCAL_ITERATIONS = 1000;
-float LOCAL_THRESH = 0.0001; //2.5e-5; // see thresh_analysis.m
+std::size_t LOCAL_ITERATIONS = 100;
+float LOCAL_THRESH = 0.0001f; //2.5e-5; // see thresh_analysis.m
 
 // add guassian noise
-float NOISE = 0.01; // see noise_analysis.m
+float NOISE = 0.001f; // see noise_analysis.m
 
 //---------------------------------------------------------
 
@@ -125,10 +133,12 @@ void showPointClouds(pcl::PointCloud<pcl::PointXYZ>::Ptr scene, pcl::PointCloud<
  * @param leafSize
  */
 void voxelGrid(PointCloudT::Ptr inputCloud, PointCloudT::Ptr &outputCloud, const float leafSize = 0.01) {
+    std::cout << "Voxel grid.." << std::endl;
     pcl::VoxelGrid<PointT> voxelGrid;
     voxelGrid.setInputCloud(inputCloud);
     voxelGrid.setLeafSize(leafSize, leafSize, leafSize);
     voxelGrid.filter(*outputCloud);
+    std::cerr << "\tPointCloud after voxel grid: " << outputCloud->width * outputCloud->height << std::endl;
 }
 
 /** Statistical Outlier Removal
@@ -138,11 +148,13 @@ void voxelGrid(PointCloudT::Ptr inputCloud, PointCloudT::Ptr &outputCloud, const
  * @param outputCloud : output point cloud
  */
 void outlierRemoval(PointCloudT::Ptr inputCloud, PointCloudT::Ptr &outputCloud) {
+    std::cout << "Outlier removal.." << std::endl;
     pcl::StatisticalOutlierRemoval<PointT> statsOutlierRemoval;
     statsOutlierRemoval.setInputCloud(inputCloud);
     statsOutlierRemoval.setMeanK(MEAN);
     statsOutlierRemoval.setStddevMulThresh(STD_DEV);
     statsOutlierRemoval.filter(*outputCloud);
+    std::cerr << "\tPointCloud after outlier removal: " << outputCloud->width * outputCloud->height << std::endl;
 }
 
 /** Spatial filters of cloud
@@ -152,6 +164,7 @@ void outlierRemoval(PointCloudT::Ptr inputCloud, PointCloudT::Ptr &outputCloud) 
  * @param outputCloud : output point cloud
  */
 void spatialFilter(const PointCloudT::Ptr &inputCloud, PointCloudT::Ptr &outputCloud) {
+    std::cout << "Spatial filter.." << std::endl;
     pcl::PassThrough<PointT> spatialFilter;
     spatialFilter.setInputCloud(inputCloud);
     // Z
@@ -166,6 +179,7 @@ void spatialFilter(const PointCloudT::Ptr &inputCloud, PointCloudT::Ptr &outputC
     spatialFilter.setFilterFieldName("y");
     spatialFilter.setFilterLimits(Y_MIN, Y_MAX);
     spatialFilter.filter(*outputCloud);
+    std::cerr << "\tPointCloud after spatial filter: " << outputCloud->width * outputCloud->height << std::endl;
 }
 
 /** Smoothing of point cloud
@@ -175,18 +189,20 @@ void spatialFilter(const PointCloudT::Ptr &inputCloud, PointCloudT::Ptr &outputC
  * @param output_cloud : output point cloud
  */
 void smoothing(const PointCloudT::Ptr &input_cloud, PointCloudT::Ptr &output_cloud) {
+    std::cout << "Smoothing.." << std::endl;
     // create a kd-tree
     pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
     pcl::PointCloud<PointT> mls_points;
     pcl::MovingLeastSquares<PointT, PointT> mls;
     // set parameters
     mls.setInputCloud(input_cloud);
-    //mls.setPolynomialOrder(SMOOTHING_POLY_ORDER);
+    mls.setPolynomialOrder(SMOOTHING_POLY_ORDER);
     mls.setSearchMethod(tree);
     mls.setSearchRadius(SMOOTHING_RADIUS);
     // reconstruct
     mls.process(mls_points);
     pcl::copyPointCloud(mls_points, *output_cloud);
+    std::cerr << "\tPointCloud after smoothing: " << output_cloud->width * output_cloud->height << std::endl;
 }
 
 /** Remove planar point cloud clusters
@@ -213,16 +229,9 @@ PointCloudT::Ptr planarSegmentation(const PointCloudT::Ptr &cloud) {
         seg.setInputCloud(result);
         seg.segment(*inliers, *coeff);
         if (inliers->indices.size() == 0) {
-            PCL_ERROR("Cloud not estimate a planar model for the dataset.");
-            std::cout << std::endl;
+            std::cout << "Cloud not estimate a planar model for the dataset!" << std::endl;
             return result;
         }
-    //    std::cerr << "Model inliers: " << inliers->indices.size () << std::endl;
-    //    for (std::size_t i = 0; i < inliers->indices.size (); ++i)
-    //        std::cerr << "Indices: " << inliers->indices[i]
-    //                  << "\tpoint: " << cloud->points[inliers->indices[i]].x << " "
-    //                                 << cloud->points[inliers->indices[i]].y << " "
-    //                                 << cloud->points[inliers->indices[i]].z << std::endl;
         // extract inliers
         pcl::ExtractIndices<PointT> extract;
         extract.setInputCloud(result);
@@ -230,6 +239,7 @@ PointCloudT::Ptr planarSegmentation(const PointCloudT::Ptr &cloud) {
         extract.setNegative(0.005f);
         extract.filter(*result);
     }
+    std::cerr << "\tPointCloud after planar segmentation: " << result->width * result->height << std::endl;
     return result;
 }
 
@@ -258,49 +268,9 @@ PointCloudT::Ptr euclideanCusterExtraction(const PointCloudT::Ptr &cloud) {
         result->width = result->points.size();
         result->height = 1;
         result->is_dense = true;
-        std::cout << "\tCluster information -->" << std::endl;
-        std::cerr << "\t" << result->width * result->height
-                  << " data points ("
-                  << pcl::getFieldsList(*result)
-                  << ")."
-                  << std::endl;
+        std::cout << "\tCluster size: " << result->width * result->height << std::endl;
     }
     return result;
-////    pcl::ExtractIndices<PointT> extract;
-////    extract.setInputCloud(cloud);
-//    for (std::vector<pcl::PointIndices>::const_iterator it = clusterIndices.begin(); it != clusterIndices.end(); it++) {
-//        PointCloudT::Ptr cloudCluster(new PointCloudT);
-//        for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); pit++) {
-//            cloudCluster->points.push_back(cloud->points[*pit]);
-//        }
-//        cloudCluster->width = cloudCluster->points.size();
-//        cloudCluster->height = 1;
-//        cloudCluster->is_dense = true;
-////        // show cluster
-////        {
-////            pcl::visualization::PCLVisualizer view("cluster");
-////            view.addPointCloud<PointT>(cloudCluster, pcl::visualization::PointCloudColorHandlerCustom<PointT>(cloudCluster, 0, 255, 0),"cluster");
-////            view.spin();
-////        }
-//        std::cout << "\tCluster information -->" << std::endl;
-//        std::cerr << "\t" << cloudCluster->width * cloudCluster->height
-//                  << " data points ("
-//                  << pcl::getFieldsList(*cloudCluster)
-//                  << ")."
-//                  << std::endl;
-//        if (cloudCluster->points.size() > MIN_CLUSTER_SIZE) { // < 925 && > 750
-//            for (std::size_t i = 0; i < cloudCluster->points.size(); i++) {
-//                PointT point = cloudCluster->points[i];
-//                result->points.push_back(point);
-//            }
-//            result->width = result->points.size();
-//            result->height = 1;
-//            result->is_dense = true;
-//        }
-//    }
-//    // return cloud if no cluster extraction was made
-//    if (!result->empty()) { return result; }
-//    else { return cloud; }
 }
 
 /** Calculates the squared distance
@@ -429,7 +399,8 @@ std::vector<int> nearestMatchingFeature(pcl::PointCloud<HistT>::Ptr scene, pcl::
  * @param object
  * @return : final transform
  */
-Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene, PointCloudT::Ptr object) {
+Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene, PointCloudT::Ptr object, unsigned int inliersThresh = NUMBER_INLIERS) {
+    std::cout << "Global alignment.." << std::endl;
     // compute surface normals
     std::cout << "\tcomputing surface normals.." << std::endl;
     {
@@ -496,6 +467,7 @@ Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene, PointCloudT::Ptr obj
         pcl::common::UniformGenerator<int> gen(0, correspondences.size()-1);
         //for (size_t i = 0; i < GLOBAL_ITERATIONS; i++) {
             //if ((i +1) % 250 == 0) { std::cout << "\t" << i+1 << " / " << GLOBAL_ITERATIONS << std::endl; }
+        unsigned int i = 0;
         while (true) {
             // sample 3 random correspondeces
             std::vector<int> idxObject(3), idxScene(3);
@@ -526,20 +498,22 @@ Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene, PointCloudT::Ptr obj
             // evaluate penalty function
             const float outlierRate = 1.0f - float(inliers) / object->size();
             if (outlierRate < penalty) {
-                std::cout << "\t--> Got a new model with " << inliers << " inliers!" << std::endl;
+                std::cout << "\t\t--> Got a new model with " << inliers << " inliers!" << std::endl;
                 penalty = outlierRate;
                 result = T;
-                // stopping criteria
-                if (inliers >= NUMBER_INLIERS) { break; }
-
-//                // show matches
-//                {
-//                    pcl::visualization::PCLVisualizer view("Global alignment new model");
-//                    view.addPointCloud<PointT>(objectAligned,pcl::visualization::PointCloudColorHandlerCustom<PointT>(objectAligned,255,0,0),"object");
-//                    view.addPointCloud<PointT>(scene,pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene,0,255,0),"scene");
-//                    view.spin();
+                // stop if enough inliers are found
+//                if (inliers >= inliersThresh) {
+//                    std::cout << "\t\tFound enough inliers" << std::endl;
+//                    break;
 //                }
             }
+            // stop if max iterations reached
+            if (i > MAX_ITERATIONS) {
+                std::cout << "\t\tMax iterations reached" << std::endl;
+                break;
+            }
+            i++;
+            if (i%1000 == 0) { std::cout << "\t\t" << i << " / " << MAX_ITERATIONS << std::endl; }
         }
         // compute inliers and RMSE
         std::vector<std::vector<int>> idx;
@@ -573,15 +547,16 @@ Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene, PointCloudT::Ptr obj
  * @return final transform
  */
 Eigen::Matrix4f findLocalAlignment(const PointCloudT::Ptr &scene, const PointCloudT::Ptr &object) {
+    std::cout << "Local alignment.." << std::endl;
     Eigen::Matrix4f result = Eigen::Matrix4f::Identity();
     pcl::search::KdTree<PointT> tree;
     tree.setInputCloud(scene);
     PointCloudT::Ptr objectAligned(new PointCloudT(*object));
     std::cout << "\tStarting ICP.." << std::endl;
-    auto timeStart = std::chrono::high_resolution_clock::now();
     {
+        pcl::ScopeTime t("\tLocal alignment");
         for (std::size_t i = 0; i < LOCAL_ITERATIONS; i++) {
-            if ((i +1) % 250 == 0) { std::cout << "\t" << i+1 << " / " << LOCAL_ITERATIONS << std::endl; }
+            if ((i +1) % 250 == 0) { std::cout << "\t\t" << i+1 << " / " << LOCAL_ITERATIONS << std::endl; }
             // find the closest points
             std::vector<std::vector<int>> indexs;
             std::vector<std::vector<float>> sqrDists;
@@ -624,19 +599,101 @@ Eigen::Matrix4f findLocalAlignment(const PointCloudT::Ptr &scene, const PointClo
         }
     }
     rmse = std::sqrt(rmse / inliers);
-    // print timing
-    auto timeEnd = std::chrono::high_resolution_clock::now();
-    auto time = std::chrono::duration_cast<std::chrono::seconds>(timeEnd - timeStart);
-    std::cout << "\n\tExecution time for local alignment --> " << time.count() << " s" << std::endl;
     // print pose
-    std::cout << "\tGot the following pose:\n" << result << std::endl;
+    std::cout << "\tGot the following pose-->" << std::endl;
+    std::cout << "\t\t"   << result(0,0) << " " << result(0,1) << " " << result(0,2) << "\n"
+              << "\tR =\t"<< result(1,0) << " " << result(1,1) << " " << result(1,2) << "\n"
+              << "\t\t"   << result(2,0) << " " << result(2,1) << " " << result(2,2) << std::endl;
+    std::cout << "\tP =\t"<< result(0,3) << " " << result(1,3) << " " << result(2,3) << std::endl;
     std::cout << "\tInliers: " << inliers << std::endl;
     std::cout << "\tRMSE: " << rmse << std::endl;
     return result;
 }
 
+/**
+ * Inspiration --> http://pointclouds.org/documentation/tutorials/alignment_prerejective.php?fbclid=IwAR1GlmwhDLB4sJwawsdhV_Osas8oDqZebw4fxtcO8T7b1TMeOpurmk1bWoM
+ * @brief computeGlobalPose
+ * @param scene
+ * @param object
+ * @return
+ */
+Eigen::Matrix4f computeGlobalPose(PointCloudT::Ptr &scene, PointCloudT::Ptr &object) {
+    std::cout << "Computing global pose.." << std::endl;
+    Eigen::Matrix4f result = Eigen::Matrix4f::Identity();
+    PointCloudT::Ptr objectAligned(new PointCloudT);
+    FeatureCloudT::Ptr objectFeatures(new FeatureCloudT);
+    FeatureCloudT::Ptr sceneFeatures(new FeatureCloudT);
+    // downsample
+    std::cout << "\tDownsampling.." << std::endl;
+    pcl::VoxelGrid<PointT> grid;
+    const float leaf = 0.005f;
+    grid.setLeafSize(leaf, leaf, leaf);
+    grid.setInputCloud(object);
+    grid.filter(*object);
+    std::cout << "\tObject after downsampling --> " << object->width * object->height << std::endl;
+    grid.setInputCloud(scene);
+    grid.filter(*scene);
+    std::cout << "\tScene after downsampling --> " << scene->width * scene->height << std::endl;
+    // Estimate normals for scene
+    std::cout << "\tEstimating scene normals.." << std::endl;
+    pcl::NormalEstimationOMP<PointT, PointT> nest;
+    nest.setRadiusSearch(0.01);
+    nest.setInputCloud(scene);
+    nest.compute(*scene);
+    // Estimate features
+    std::cout << "\tEstimating features.." << std::endl;
+    FeatureEstimationT fest;
+    fest.setRadiusSearch(0.025);
+    fest.setInputCloud(object);
+    fest.setInputNormals(object);
+    fest.compute(*objectFeatures);
+    fest.setInputCloud(scene);
+    fest.setInputNormals(scene);
+    fest.compute(*sceneFeatures);
+    // perform alignment
+    std::cout << "\tStarting alignment.." << std::endl;
+    pcl::SampleConsensusPrerejective<PointT, PointT, FeatureT> align;
+    align.setInputSource(object);
+    align.setSourceFeatures(objectFeatures);
+    align.setInputTarget(scene);
+    align.setTargetFeatures(sceneFeatures);
+    align.setMaximumIterations(50000); // number of RANSAC iterations
+    align.setNumberOfSamples(3); // number of points to sample for generating/prerejecting a pose
+    align.setCorrespondenceRandomness(5); // number of nearest features to use
+    align.setSimilarityThreshold(0.9f); // polygonal edge length similarity threshold
+    align.setMaxCorrespondenceDistance(0.01); // inlier threshold
+    align.setInlierFraction(0.25f); // Required inlier fraction for accepting a pose hypothesis
+    {
+        pcl::ScopeTime t("\tGlobal alignment");
+        align.align(*objectAligned);
+    }
+    if (align.hasConverged()) {
+        // print results
+        result = align.getFinalTransformation();
+        std::cout << "\tFinal transformation -->" << std::endl;
+        std::cout << "\t\t"   << result(0,0) << " " << result(0,1) << " " << result(0,2) << "\n"
+                  << "\tR =\t"<< result(1,0) << " " << result(1,1) << " " << result(1,2) << "\n"
+                  << "\t\t"   << result(2,0) << " " << result(2,1) << " " << result(2,2) << std::endl;
+        std::cout << "\tP =\t"<< result(0,3) << " " << result(1,3) << " " << result(2,3) << std::endl;
+        std::cout << "\tInliers: " << align.getInliers().size() << " / " << object->size() << std::endl;
+//        // show alignment
+//        {
+//            pcl::visualization::PCLVisualizer view("Global alignment");
+//            view.addPointCloud(scene, ColorHandlerT(scene, 0.0, 255.0, 0.0), "scene");
+//            view.addPointCloud(objectAligned, ColorHandlerT(objectAligned, 255.0, 0.0, 0.0), "objectAligned");
+//            view.spin();
+//        }
+        return result;
+    }
+    else {
+        // alignment failed
+        std::cout << "\tGlobal alignment failed!" << std::endl;
+        return result;
+    }
+}
+
 /** Compute Iterative Closest Point
- * from: https://github.com/Masle16/pcl/blob/master/tools/iterative_closest_point.cpp
+ * Inspiration --> https://github.com/Masle16/pcl/blob/master/tools/iterative_closest_point.cpp
  * @brief computeICP : Computes the ICP from target to source
  * @param target : target point cloud
  * @param source : source point cloud
@@ -967,24 +1024,20 @@ void iterationData2File(const std::vector<rw::math::Transform3D<>> &globalPoses,
  */
 void data2File(const std::vector<rw::math::Transform3D<>> &globalPoses,
                const std::vector<rw::math::Transform3D<>> &localPoses,
-               const std::vector<std::chrono::seconds> &times) {
+               const std::vector<double> &times) {
     std::cout << "Writing data to file data.txt " << std::endl;
     std::ofstream file;
-
-    // pose estimation
     file.open("../../data/data.txt");
     for (std::size_t i = 0; i < times.size(); i++) {
-        // Global
         rw::math::Vector3D<> posGlobal = globalPoses[i].P();
         rw::math::RPY<> rpyGlobal = rw::math::RPY<>(globalPoses[i].R());
-        // Local
         rw::math::Vector3D<> posLocal = localPoses[i].P();
         rw::math::RPY<> rpyLocal = rw::math::RPY<>(localPoses[i].R());
-        file << times[i].count() << " " // time
-             << posGlobal(0)     << " " << posGlobal(1) << " " << posGlobal(2) << " "   // pos global
-             << rpyGlobal(0)     << " " << rpyGlobal(1) << " " << rpyGlobal(2) << " "   // rpy global
-             << posLocal(0)      << " " << posLocal(1)  << " " << posLocal(2)  << " "   // pos local
-             << rpyLocal(0)      << " " << rpyLocal(1)  << " " << rpyLocal(2)  << "\n"; // rpy local
+        file << times[i]     << " " // time
+             << posGlobal(0) << " " << posGlobal(1) << " " << posGlobal(2) << " "   // pos global
+             << rpyGlobal(0) << " " << rpyGlobal(1) << " " << rpyGlobal(2) << " "   // rpy global
+             << posLocal(0)  << " " << posLocal(1)  << " " << posLocal(2)  << " "   // pos local
+             << rpyLocal(0)  << " " << rpyLocal(1)  << " " << rpyLocal(2)  << "\n"; // rpy local
     }
     file.close();
 }
@@ -1002,286 +1055,65 @@ int main(int argc, char** argv) {
 
     // data to save for every analysis
     std::vector<rw::math::Transform3D<>> globalPoses, localPoses;
-    std::vector<std::chrono::seconds> times;
-
-    //---------------------------
-    // SPIN IMAGES RADIUS
-    //---------------------------
-//    std::vector<float> radis { 0.1, 0.05, 0.01, 0.005, 0.001 };
-//    std::vector<float> radiusData;
-//    for (std::size_t idx = 0; idx < radis.size(); idx++) {
-//        SPIN_IMG_RADIUS = radis[idx];
-//        std::cout << "\n------------------------------------" << std::endl;
-//        std::cout << "SPIN IMAGES RADIUS: " << SPIN_IMG_RADIUS << std::endl;
-//        std::cout << "------------------------------------\n" << std::endl;
-
-    //---------------------------
-    // ALIGNMENT THRESH ANALYSIS
-    //---------------------------
-//    std::vector<float> threshs = { 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8 }; // thresh.txt
-//    std::vector<float> threshData;
-//    for (std::size_t idx = 0; idx < threshs.size(); idx++) {
-//        GLOBAL_THRESH = threshs[idx];
-//        LOCAL_THRESH = threshs[idx];
-//        std::cout << "\n-------------------------------------" << std::endl;
-//        std::cout << "Analysing for thresh --> " << GLOBAL_THRESH << " " << LOCAL_THRESH << std::endl;
-//        std::cout << "-------------------------------------\n" << std::endl;
-
-    //---------------------------
-    // MAX ITERATIONS ANALYSIS
-    //---------------------------
-//    std::vector<std::size_t> iterations { 1000, 2500, 5000, 7500, 10000 };
-//    std::vector<std::size_t> iterationData;
-//    for (std::size_t idx = 0; idx < iterations.size(); idx++) {
-//        MAX_ITERATIONS = iterations[idx];
-//        std::cout << "\n------------------------------------" << std::endl;
-//        std::cout << "MAX ITERATIONS ANALYSIS: " << MAX_ITERATIONS << std::endl;
-//        std::cout << "------------------------------------\n" << std::endl;
-
-    //---------------------------
-    // NOISE ANALYSIS
-    //---------------------------
-//    std::vector<float> noises { 1e-5, 1e-4, 1e-3, 1e-2, 1e-1 };
-//    std::vector<float> noiseData;
-//    for (std::size_t idx = 0; idx < noises.size(); idx++) {
-//        NOISE = noises[idx]
-//        std::cout << "\n------------------------------------" << std::endl;
-//        std::cout << "NOISE ANALYSIS: " << NOISE << std::endl;
-//        std::cout << "------------------------------------\n" << std::endl;
-
+    std::vector<double> times;
         for (std::size_t i = 0; i < 30; i++) {
-
-            // time start of method
-            auto timeStart = std::chrono::high_resolution_clock::now();
-
             // load the point cloud
-            PointCloudT::Ptr scene(new PointCloudT), origin(new PointCloudT);
+            PointCloudT::Ptr scene(new PointCloudT);
             const std::string path = "../../scanner25D_point_clouds/Scanner25D_" + std::to_string(i) + ".pcd";
-            //const std::string path = "../../scanner25D_point_clouds/Scanner25D_25.pcd";
             pcl::io::loadPCDFile(path, *scene);
-
             std::cout << "Processing file: " << path << " number " << i << " / 30" << std::endl;
-
-            // add noise to Scanner25D point cloud
-            scene = addGaussianNoise(scene, NOISE); // noise analysis
-            // show noise
-            {
-                pcl::visualization::PCLVisualizer view("Initial scene");
-                view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-                view.spin();
-            }
-
-            //---------------------------
-            // POINT CLOUD PREPROCESSING
-            //---------------------------
-            std::cout << "Point cloud preprocessing" << std::endl;
-
-            // display point cloud info
-            std::cout << "Point cloud before preprocessing => " << std::endl;
-            PointT min_pt, max_pt;
-            pcl::getMinMax3D(*scene, min_pt, max_pt);
-            std::cout << "Max x: " << max_pt.x << std::endl;
-            std::cout << "Max y: " << max_pt.y << std::endl;
-            std::cout << "Max z: " << max_pt.z << std::endl;
-            std::cout << "Min x: " << min_pt.x << std::endl;
-            std::cout << "Min y: " << min_pt.y << std::endl;
-            std::cout << "Min z: " << min_pt.z << std::endl;
-            std::cerr << scene->width * scene->height
-                      << " data points ("
-                      << pcl::getFieldsList(*scene)
-                      << ")."
-                      << std::endl;
-
-            spatialFilter(scene, scene);
-            std::cerr << "PointCloud after spatial filter: "
-                      << scene->width * scene->height
-                      << " data points ("
-                      << pcl::getFieldsList(*scene)
-                      << ")."
-                      << std::endl;
-            {
-                pcl::visualization::PCLVisualizer view("Scene after spatial filter");
-                view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-                view.spin();
-            }
-
-//            // filter point cloud
-//            voxelGrid(scene, scene, 0.01);
-//            std::cerr << "PointCloud after voxel grid: "
-//                      << scene->width * scene->height
-//                      << " data points ("
-//                      << pcl::getFieldsList(*scene)
-//                      << ")."
-//                      << std::endl;
-
-            smoothing(scene, scene);
-            std::cerr << "PointCloud after smoothing: "
-                      << scene->width * scene->height
-                      << " data points ("
-                      << pcl::getFieldsList(*scene)
-                      << ")."
-                      << std::endl;
-            {
-                pcl::visualization::PCLVisualizer view("Scene after smoothing");
-                view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-                view.spin();
-            }
-
-            // remove plans in the scene
-            scene = planarSegmentation(scene);
-            std::cerr << "PointCloud after planar segmentation: "
-                      << scene->width * scene->height
-                      << " data points ("
-                      << pcl::getFieldsList(*scene)
-                      << ")."
-                      << std::endl;
-            {
-                pcl::visualization::PCLVisualizer view("Scene after planer segmentation");
-                view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-                view.spin();
-            }
-
-            outlierRemoval(scene, scene);
-            std::cerr << "PointCloud after outlier removal filter: "
-                      << scene->width * scene->height
-                      << " data points ("
-                      << pcl::getFieldsList(*scene)
-                      << ")."
-                      << std::endl;
-            {
-                pcl::visualization::PCLVisualizer view("Scene after outlier removal");
-                view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-                view.spin();
-            }
-
-            scene = euclideanCusterExtraction(scene);
-            std::cerr << "PointCloud after cluster extration: "
-                      << scene->width * scene->height
-                      << " data points ("
-                      << pcl::getFieldsList(*scene)
-                      << ")."
-                      << std::endl;
-            {
-                pcl::visualization::PCLVisualizer view("Scene after cluster extraction");
-                view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-                view.spin();
-            }
-
             // load the generated object point cloud
             PointCloudT::Ptr object(new PointCloudT);
             pcl::io::loadPCDFile(OBJECT_PATH, *object);
-
-            // display point cloud info
-            std::cout << "Object point cloud before preprocessing => " << std::endl;
-            PointT minPt, maxPt;
-            pcl::getMinMax3D(*object, minPt, maxPt);
-            std::cout << "Max x: " << maxPt.x << std::endl;
-            std::cout << "Max y: " << maxPt.y << std::endl;
-            std::cout << "Max z: " << maxPt.z << std::endl;
-            std::cout << "Min x: " << minPt.x << std::endl;
-            std::cout << "Min y: " << minPt.y << std::endl;
-            std::cout << "Min z: " << minPt.z << std::endl;
-            std::cerr << object->width * object->height
-                      << " data points ("
-                      << pcl::getFieldsList(*object)
-                      << ")."
-                      << std::endl;
-
-            // filter object point cloud
-            voxelGrid(object, object, 0.01); // 0.005
-            std::cerr << "object point cloud after voxel grid: "
-                      << object->width * object->height
-                      << " data points ("
-                      << pcl::getFieldsList(*object)
-                      << ")."
-                      << std::endl;
-
-//            // show intial state of scene and object
-//            {
-//                pcl::visualization::PCLVisualizer view("Scene before preprocessing");
-//                view.addPointCloud<PointT>(object, pcl::visualization::PointCloudColorHandlerCustom<PointT>(object, 255, 0, 0),"object");
-//                view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-//                view.spin();
-//            }
-
-            //---------------------------
-            // POSE ESTIMATION 3D TO 3D
-            //---------------------------
-            std::cout << "Pose estimation 3D to 3D" << std::endl;
-
-            //---------------------------
-            // GLOBAL ALIGNMENT
-            //---------------------------
-            std::cout << "Global alignment.." << std::endl;
-
-            // find alignment
-            Eigen::Matrix4f poseGlobal = findGlobalAlignment(scene, object);
-            pcl::transformPointCloud(*object, *object, poseGlobal);
-
-//    //        // show the state of the scene and the object
-//    //        {
-//    //            pcl::visualization::PCLVisualizer view("After global alignment");
-//    //            view.addPointCloud<PointT>(object, pcl::visualization::PointCloudColorHandlerCustom<PointT>(object, 255, 0, 0),"object");
-//    //            view.addPointCloud<PointT>(scene, pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene, 0, 255, 0),"scene");
-//    //            view.spin();
-//    //        }
-
-            //-----------------
-            // LOCAL ALIGNMENT
-            //-----------------
-            std::cout << "Local alignment.." << std::endl;
-            Eigen::Matrix4f poseLocal = findLocalAlignment(scene, object);
-            //Eigen::Matrix4f poseLocal = computeICP(object, scene);
-            pcl::transformPointCloud(*object, *object, poseLocal);
-
-            // get time of method
-            auto timeEnd = std::chrono::high_resolution_clock::now();
-            std::chrono::seconds time = std::chrono::duration_cast<std::chrono::seconds>(timeEnd - timeStart);
-            std::cout << "Execution time: " << time.count() << std::endl;
-
-            std::cout << "Found pose -->\n" << poseGlobal * poseLocal << std::endl;
-
-            // store data in vectors
-            globalPoses.push_back(matrix4f2transform(poseGlobal));
-            localPoses.push_back(matrix4f2transform(poseLocal));
-            times.push_back(time);
-            //noises.push_back(NOISE); // noise analysis
-            //threshData.push_back(GLOBAL_THRESH); // thresh analysis
-            //iterationData.push_back(MAX_ITERATIONS); // iteration analysis
-            //radiusData.push_back(SPIN_IMG_RADIUS); // spin images radius analysis
-
+            //add noise to Scanner25D point cloud
+            scene = addGaussianNoise(scene, NOISE); // noise analysis
+            {
+                pcl::ScopeTime t("Execution time");
+                //==========================
+                // point cloud preprocessing
+                //==========================
+                std::cout << "Point cloud preprocessing" << std::endl;
+                spatialFilter(scene, scene);
+                smoothing(scene, scene);
+                scene = planarSegmentation(scene);
+//                outlierRemoval(scene, scene);
+//                scene = euclideanCusterExtraction(scene);
+                //=========================
+                // pose estimation 3D to 3D
+                //=========================
+                std::cout << "Pose estimation 3D to 3D" << std::endl;
+                // global alignment
+                Eigen::Matrix4f poseGlobal = computeGlobalPose(scene, object);
+                pcl::transformPointCloud(*object, *object, poseGlobal);
+                // local alignment
+                Eigen::Matrix4f poseLocal = findLocalAlignment(scene, object);
+                pcl::transformPointCloud(*object, *object, poseLocal);
+                // save data
+                times.push_back(t.getTime());
+                globalPoses.push_back(matrix4f2transform(poseGlobal));
+                localPoses.push_back(matrix4f2transform(poseLocal));
+                // print esitmate pose
+                Eigen::Matrix4f result = poseGlobal * poseLocal;
+                std::cout << "Estimate transformation -->" << std::endl;
+                std::cout << "\t"   << result(0,0) << " " << result(0,1) << " " << result(0,2) << "\n"
+                          << "R =\t"<< result(1,0) << " " << result(1,1) << " " << result(1,2) << "\n"
+                          << "\t"   << result(2,0) << " " << result(2,1) << " " << result(2,2) << std::endl;
+                std::cout << "P =\t"<< result(0,3) << " " << result(1,3) << " " << result(2,3) << std::endl;
+            }
 //            // show the state of the scene and the object
 //            {
-//                pcl::visualization::PCLVisualizer view("After alignment in scene");
-//                view.addPointCloud<PointT>(object,pcl::visualization::PointCloudColorHandlerCustom<PointT>(object,255,0,0),"object");
-//                view.addPointCloud<PointT>(scene,pcl::visualization::PointCloudColorHandlerCustom<PointT>(scene,0,255,0),"scene");
+//                PointCloudT::Ptr origin(new PointCloudT);
+//                const std::string path = "../../scanner25D_point_clouds/Scanner25D_" + std::to_string(i) + ".pcd";
+//                pcl::io::loadPCDFile(path, *origin);
+//                spatialFilter(origin, origin);
+//                pcl::visualization::PCLVisualizer view("After alignment in origin scene");
+//                view.addPointCloud<PointT>(object, ColorHandlerT(object,255,0,0), "object");
+//                view.addPointCloud<PointT>(origin, ColorHandlerT(origin,0,255,0), "origin");
 //                view.spin();
 //            }
-
-            // show the state of the scene and the object
-            {
-                PointCloudT::Ptr origin(new PointCloudT);
-                const std::string path = "../../scanner25D_point_clouds/Scanner25D_" + std::to_string(i) + ".pcd";
-                pcl::io::loadPCDFile(path, *origin);
-                spatialFilter(origin, origin);
-                pcl::visualization::PCLVisualizer view("After alignment in origin scene");
-                view.addPointCloud<PointT>(object,pcl::visualization::PointCloudColorHandlerCustom<PointT>(object,255,0,0),"object");
-                view.addPointCloud<PointT>(origin,pcl::visualization::PointCloudColorHandlerCustom<PointT>(origin,0,255,0),"origin");
-                view.spin();
-            }
-
-            // save pcd file of scene
-            //const std::string fileName = "../../data/point_cloud_estimations/Scanner25D_" + std::to_string(i) + "_" + std::to_string(noise) + ".pcd";
-            //saveSceneWithObject(object, origin, fileName);
-        //}
     }
-
     // save data
     data2File(globalPoses, localPoses, times);
-    //noiseData2File(globalPoses, localPoses, times, noises); // noise analysis
-    //threshData2File(globalPoses, localPoses, threshData, times); // thresh analysis
-    //iterationData2File(globalPoses, localPoses, iterationData, times); // iterations analysis
-    //radiusData2File(globalPoses, localPoses, radiusData, times); // spin images radius analysis
     writeTransforms2File(getTransform("Table"), getTransform("WORLD"), getTransform("Scanner25D"));
 
     std::cout << "\nProgram ended\n" << std::endl;

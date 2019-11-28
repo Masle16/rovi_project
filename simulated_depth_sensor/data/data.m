@@ -45,7 +45,7 @@ for i = 1:n
     % estimated pose
     globalT = [eul2rotm(globalRpy(i,:)) globalPos(i,:)'; 0 0 0 1];
     localT = [eul2rotm(localRpy(i,:)) localPos(i,:)'; 0 0 0 1];
-    pose = globalT * localT;
+    pose = globalT * globalT;
     
     % worldT * tableT * realT = worldT * scannerT * globalT * localT
     % realT = tableT^(-1) * scannerT * globalT * localT
