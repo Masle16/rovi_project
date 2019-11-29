@@ -9,7 +9,7 @@ set(ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 set(RW_ROOT /home/mathi/RobWork/RobWork)
 set(RWSTUDIO_ROOT /home/mathi/RobWork/RobWorkStudio)
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 set(RobWork_DIR ${RW_ROOT}/cmake)
 set(RobWorkStudio_DIR ${RWSTUDIO_ROOT}/cmake)
 
@@ -33,6 +33,8 @@ add_definitions(${PCL_DEFINITIONS})
 add_executable(
     simulated_depth_sensor
     main.cpp
+    alignment.hpp
+    util.hpp
 )
 target_link_libraries(
     simulated_depth_sensor
