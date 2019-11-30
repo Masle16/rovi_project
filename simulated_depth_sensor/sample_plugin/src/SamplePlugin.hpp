@@ -24,7 +24,6 @@
 // OpenCV 3
 #include <opencv2/opencv.hpp>
 
-
 #include "ui_SamplePlugin.h"
 
 #include <rws/RobWorkStudio.hpp>

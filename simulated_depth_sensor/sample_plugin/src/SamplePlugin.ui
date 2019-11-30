@@ -46,6 +46,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="_btn_sds">
+        <property name="text">
+         <string>Perform noise analysis</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QSpinBox" name="_spinBox"/>
       </item>
       <item>

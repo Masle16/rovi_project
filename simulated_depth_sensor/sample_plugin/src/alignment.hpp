@@ -40,7 +40,7 @@
 #include <pcl/common/time.h>
 
 // DEFINES
-#define OBJECT_PATH "../../../point_clouds_of_objects/rubber_duck.pcd"
+#define OBJECT_PATH "/home/mathi/Documents/rovi/rovi_project/point_clouds_of_objects/rubber_duck.pcd"
 
 // TYPEDEFS
 typedef pcl::PointNormal PointT;
@@ -766,7 +766,7 @@ void saveSceneWithObject(const PointCloudT::Ptr &object, const PointCloudT::Ptr 
 }
 
 Eigen::Matrix4f alignment(const float noise=0.0001f) {
-    Eigen::Matrix4f result = Eigen::Matrix4f::Identity();
+    Eigen::Matrix4f result;
 
     // load the scene
     PointCloudT::Ptr scene(new PointCloudT);
@@ -798,16 +798,26 @@ Eigen::Matrix4f alignment(const float noise=0.0001f) {
         poseLocal = findLocalAlignment(scene, object);
         pcl::transformPointCloud(*object, *object, poseLocal);
     }
+    result = poseLocal * poseGlobal;
 
-    // show the alignment
+    // show the alignment in origin scene
     {
+        PointCloudT::Ptr _scene(new PointCloudT);
+        PointCloudT::Ptr _object(new PointCloudT);
+
+        pcl::io::loadPCDFile("Scanner25D.pcd", *_scene);
+        spatialFilter(_scene, _scene);
+
+        pcl::io::loadPCDFile(OBJECT_PATH, *_object);
+//        pcl::transformPointCloud(*_object, *_object, poseGlobal);
+//        pcl::transformPointCloud(*_object, *_object, poseLocal);
+        pcl::transformPointCloud(*_object, *_object, result);
+
         pcl::visualization::PCLVisualizer view("After alignment");
-        view.addPointCloud<PointT>(object, ColorHandlerT(object, 255, 0 , 0), "Object");
-        view.addPointCloud<PointT>(scene, ColorHandlerT(scene, 255, 0, 0), "Scene");
+        view.addPointCloud<PointT>(_object, ColorHandlerT(_object, 255, 0 , 0), "Object");
+        view.addPointCloud<PointT>(_scene, ColorHandlerT(_scene, 0, 255, 0), "Origin");
         view.spin();
     }
 
-    // return pose
-    result = poseLocal * poseGlobal;
     return result;
 }

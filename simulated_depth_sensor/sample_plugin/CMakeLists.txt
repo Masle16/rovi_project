@@ -15,7 +15,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6.0)
 
 # The name of the project.
-PROJECT(RoViPlugin)
+# PROJECT(RoViPlugin)
+PROJECT( simulated_depth_sensor_plugin )
 
 # Set C++ standard to C++14
 set(CMAKE_CXX_STANDARD 14)

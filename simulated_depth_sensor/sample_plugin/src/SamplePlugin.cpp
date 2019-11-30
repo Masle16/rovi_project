@@ -2,7 +2,7 @@
 #include "alignment.hpp"
 #include "util.hpp"
 
-#define WC_FILE "../../workcell/Scene.wc.xml"
+#define WC_FILE "/home/mathi/Documents/rovi/rovi_project/simulated_depth_sensor/workcell/Scene.wc.xml"
 
 SamplePlugin::SamplePlugin():RobWorkStudioPlugin("SamplePluginUI", QIcon(":/pa_icon.png")) {
 	setupUi(this);
@@ -11,11 +11,12 @@ SamplePlugin::SamplePlugin():RobWorkStudioPlugin("SamplePluginUI", QIcon(":/pa_i
     connect(_timer, SIGNAL(timeout()), this, SLOT(timer()));
 
 	// now connect stuff from the ui component
-	connect(_btn_im    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
-	connect(_btn_scan    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
-	connect(_btn0    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
-	connect(_btn1    ,SIGNAL(pressed()), this, SLOT(btnPressed()) );
-	connect(_spinBox  ,SIGNAL(valueChanged(int)), this, SLOT(btnPressed()) );
+    connect(_btn_sds,  SIGNAL(pressed()),         this, SLOT(btnPressed()));
+    connect(_btn_im,   SIGNAL(pressed()),         this, SLOT(btnPressed()) );
+    connect(_btn_scan, SIGNAL(pressed()),         this, SLOT(btnPressed()) );
+    connect(_btn0,     SIGNAL(pressed()),         this, SLOT(btnPressed()) );
+    connect(_btn1,     SIGNAL(pressed()),         this, SLOT(btnPressed()) );
+    connect(_spinBox,  SIGNAL(valueChanged(int)), this, SLOT(btnPressed()) );
 
 	_framegrabber = NULL;
 	
@@ -131,7 +132,7 @@ cv::Mat SamplePlugin::toOpenCVImage(const rw::sensor::Image& img) {
 
 void SamplePlugin::btnPressed() {
     QObject *obj = sender();
-	if(obj==_btn0){
+    if ( obj==_btn0 ){
 //		log().info() << "Button 0\n";
 //		// Toggle the timer on and off
 //		if (!_timer25D->isActive())
@@ -145,9 +146,8 @@ void SamplePlugin::btnPressed() {
         rw::math::Q from(6, 1.571, -1.572, -1.572, -1.572, 1.571, 0);
         rw::math::Q to(6, 1.847, -2.465, -1.602, -0.647, 1.571, 0); //From pose estimation
         createPathRRTConnect(from, to, extend, maxTime);
-
-
-	} else if(obj==_btn1){
+    }
+    else if(obj==_btn1) {
         log().info() << "Button 1\n";
         // Toggle the timer on and off
         if (!_timer->isActive()){
@@ -156,35 +156,60 @@ void SamplePlugin::btnPressed() {
         }
         else
             _step = 0;
-
-	} else if(obj==_spinBox){
+    }
+    else if(obj==_spinBox) {
 		log().info() << "spin value:" << _spinBox->value() << "\n";
 	}
-	else if( obj==_btn_im ){
+    else if( obj==_btn_im ) {
 		getImage();
 	}
-    else if( obj==_btn_scan ) {
+    else if( obj == _btn_sds ) {
         // containers
-        std::vector<float> diffAngle, diffPos;
+        std::vector<Vec> positions;
+        std::vector<float> angles, noises;
         std::vector<double> times;
-        std::vector<float> noises { 0.00001f, 0.0001f, 0.001f, 0.01f, 0.1f };
 
-        // create pcd file
-        get25DImage();
+        // analyze for different noises
+        std::vector<float> noise { 0.00001f, 0.0001f, 0.001f, 0.01f, 0.1f };
 
-        // perform alignment
-        Eigen::Matrix4f pose = Eigen::Matrix4f::Identity();
-        {
-            pcl::ScopeTime t("Alignment time");
-            pose = alignment(noises[0]);
-            times.push_back(t.getTime());
+        for (std::size_t i = 0; i < noise.size(); i++) {
+            std::cout << "Noise: " << noise[i] << std::endl;
+
+            for (std::size_t j = 0; j < 30; j++) {
+                std::cout << j << " / " << 30 << std::endl;
+
+                // move object to random pose
+                moveFrame(_wc, _state);
+                getRobWorkStudio()->setState(_state);
+
+                // create pcd file
+                get25DImage();
+
+                // perform alignment
+                Eigen::Matrix4f pose = Eigen::Matrix4f::Identity();
+                {
+                    pcl::ScopeTime t("Alignment time");
+                    pose = alignment(noise[i]);
+                    times.push_back(t.getTime());
+                }
+
+                // calculate error
+                std::pair<float, Vec> diffs = calcError(pose, _wc, _state);
+
+                // store data
+                angles.push_back(std::get<0>(diffs));
+                positions.push_back(std::get<1>(diffs));
+                noises.push_back(noise[0]);
+            }
         }
 
-        // calculate performance
-
-
-        // save data
+        // save data to file
+        const std::string filePath = "/home/mathi/Documents/rovi/rovi_project/simulated_depth_sensor/data/data.txt";
+        save2File(filePath, noises, times, angles, positions);
 	}
+    else if (obj == _btn_sds) {
+        get25DImage();
+    }
 }
 
 void SamplePlugin::get25DImage() {
