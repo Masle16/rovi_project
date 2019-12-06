@@ -20,7 +20,7 @@
     <Property>
      <Name>LastOpennedFiles</Name>
      <Value>
-      <StringList>/home/mathi/Documents/rovi/rovi_project/sparse_stereo/workcell/parts/rubber_duck.stl;/home/mathi/Documents/rovi/rovi_project/sparse_stereo/workcell/Scene.wc.xml</StringList>
+      <StringList>/home/mathi/Documents/rovi/rovi_project/sparse_stereo/workcell/parts/rubber_duck.stl;/home/mathi/Documents/rovi/rovi_project/sparse_stereo/workcell/parts/Duck.3ds;/home/mathi/Documents/rovi/rovi_project/sparse_stereo/workcell/Scene.wc.xml</StringList>
      </Value>
     </Property>
     <Property>
@@ -224,7 +224,7 @@
     <Property>
      <Name>WindowPosX</Name>
      <Value>
-      <Integer>1987</Integer>
+      <Integer>67</Integer>
      </Value>
     </Property>
     <Property>
@@ -299,9 +299,21 @@
      </Value>
     </Property>
     <Property>
+     <Name>GL_MULTISAMPLE</Name>
+     <Value>
+      <Boolean>0</Boolean>
+     </Value>
+    </Property>
+    <Property>
      <Name>GL_NORMALIZE</Name>
      <Value>
       <Boolean>1</Boolean>
+     </Value>
+    </Property>
+    <Property>
+     <Name>GL_NR_SAMPLES</Name>
+     <Value>
+      <Integer>4</Integer>
      </Value>
     </Property>
     <Property>

@@ -1,26 +1,24 @@
 %% Iteration analysis
 clc; clear;
 format long
-x = 50000:10000:100000;
+x = 50000:10000:90000;
 
 % load
 load('iterations.txt');
 
-iter_mu = zeros(6,4);
+iter_mu = zeros(5,4);
 iter_mu(1,:) = mean(iterations(1:30,:));
 iter_mu(2,:) = mean(iterations(31:60,:));
 iter_mu(3,:) = mean(iterations(61:90,:));
 iter_mu(4,:) = mean(iterations(91:120,:));
 iter_mu(5,:) = mean(iterations(121:150,:));
-iter_mu(6,:) = mean(iterations(151:180,:));
 
-iter_std = zeros(6,4);
+iter_std = zeros(5,4);
 iter_std(1,:) = std(iterations(1:30,:));
 iter_std(2,:) = std(iterations(31:60,:));
 iter_std(3,:) = std(iterations(61:90,:));
 iter_std(4,:) = std(iterations(91:120,:));
 iter_std(5,:) = std(iterations(121:150,:));
-iter_std(6,:) = std(iterations(151:180,:));
 
 % plot
 figure('name', 'Iteration analysis')
