@@ -1,0 +1,3 @@
+./create_templates_cad ../../files/obj_01.ply --no-depth --scale 0.001 --no-cloud -r 150,200,250 --lat-begin 45 --lat-end 80 --lon-begin 0 --lon-end 360 --fov 45.5 --bc 1,0,0 -t 1 -s 1 -v --output-dir ../../templates/
+
+./linemod ../templates ../files/Camera_Left.png
