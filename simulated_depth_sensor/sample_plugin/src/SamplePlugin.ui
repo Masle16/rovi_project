@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>476</width>
-    <height>479</height>
+    <height>481</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -46,7 +46,21 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="_btn_move">
+        <property name="text">
+         <string>Move object random</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="_btn_sds">
+        <property name="text">
+         <string>Perform alignment of current object</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="_btn_noise">
         <property name="text">
          <string>Perform noise analysis</string>
         </property>

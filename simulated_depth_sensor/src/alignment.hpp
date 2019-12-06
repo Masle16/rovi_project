@@ -1,3 +1,5 @@
+#pragma once
+
 // INCLUDE
 #include <iostream>
 #include <chrono>
@@ -40,9 +42,7 @@
 #include <pcl/common/time.h>
 
 // DEFINES
-#define SCENE_PATH "../../scanner25D_point_clouds/Scanner25D_"
-#define OBJECT_PATH "../../../point_clouds_of_objects/rubber_duck.pcd"
-#define WC_FILE "../../workcell/Scene.wc.xml"
+#define OBJECT_PATH "/home/mathi/Documents/rovi/rovi_project/point_clouds_of_objects/rubber_duck.pcd"
 
 // TYPEDEFS
 typedef pcl::PointNormal PointT;
@@ -79,8 +79,8 @@ void voxelGrid(PointCloudT::Ptr inputCloud, PointCloudT::Ptr &outputCloud, const
  */
 void outlierRemoval(const PointCloudT::Ptr inputCloud,
                     PointCloudT::Ptr &outputCloud,
-                    const float mean=200.0f,
-                    const float stdDev=0.1f) {
+                    const float mean=10.0f,
+                    const float stdDev=1.0f) {
     std::cout << "Outlier removal.." << std::endl;
     pcl::StatisticalOutlierRemoval<PointT> statsOutlierRemoval;
     statsOutlierRemoval.setInputCloud(inputCloud);
@@ -155,15 +155,14 @@ void smoothing(const PointCloudT::Ptr &input_cloud,
  * @param inputCloud : point cloud
  * @return point cloud
  */
-PointCloudT::Ptr planarSegmentation(const PointCloudT::Ptr &cloud,
-                                    const float removeFraction=0.3f,
-                                    const float distance=0.01f) {
+void planarSegmentation(const PointCloudT::Ptr &cloud,
+                        PointCloudT::Ptr &output,
+                        const float removeFraction=0.3f,
+                        const float distance=0.01f) {
     std::cout << "Planer segmentaion.." << std::endl;
-    PointCloudT::Ptr result(new PointCloudT);
-    pcl::copyPointCloud(*cloud, *result);
-    int nPoints = (int)result->points.size();
-    while (result->points.size() > (removeFraction * nPoints)) {
-        std::cout << "\tCloud points: " << result->points.size() << std::endl;
+    int nPoints = (int)output->points.size();
+    while (output->points.size() > (removeFraction * nPoints)) {
+        std::cout << "\tCloud points: " << output->points.size() << std::endl;
         pcl::ModelCoefficients::Ptr coeff(new pcl::ModelCoefficients());
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
         // create the segmentation object
@@ -172,21 +171,20 @@ PointCloudT::Ptr planarSegmentation(const PointCloudT::Ptr &cloud,
         seg.setModelType(pcl::SACMODEL_PLANE);
         seg.setMethodType(pcl::SAC_RANSAC);
         seg.setDistanceThreshold(distance);
-        seg.setInputCloud(result);
+        seg.setInputCloud(output);
         seg.segment(*inliers, *coeff);
         if (inliers->indices.size() == 0) {
             std::cout << "Cloud not estimate a planar model for the dataset!" << std::endl;
-            return result;
+            return;
         }
         // extract inliers
         pcl::ExtractIndices<PointT> extract;
-        extract.setInputCloud(result);
+        extract.setInputCloud(output);
         extract.setIndices(inliers);
         extract.setNegative(0.005f);
-        extract.filter(*result);
+        extract.filter(*output);
     }
-    std::cerr << "\tPointCloud after planar segmentation: " << result->width * result->height << std::endl;
-    return result;
+    std::cerr << "\tPointCloud after planar segmentation: " << output->width * output->height << std::endl;
 }
 
 /** Cluster extraction of cloud
@@ -200,7 +198,7 @@ PointCloudT::Ptr euclideanCusterExtraction(const PointCloudT::Ptr &cloud,
                                            const int minSize=750,
                                            const int maxSize=1500) {
     std::cout << "Euclidean cluster extraction.." << std::endl;
-    PointCloudT::Ptr result(new PointCloudT);
+    PointCloudT::Ptr result(new PointCloudT(*cloud));
     pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);
     tree->setInputCloud(cloud);
     std::vector<pcl::PointIndices> clusterIndices;
@@ -767,4 +765,60 @@ void saveSceneWithObject(const PointCloudT::Ptr &object, const PointCloudT::Ptr 
 
     // save pcd  file
     pcl::io::savePCDFile(fileName, *result);
+}
+
+Eigen::Matrix4f alignment(const float noise=0.0001f) {
+    Eigen::Matrix4f result;
+
+    // load the scene
+    PointCloudT::Ptr scene(new PointCloudT);
+    pcl::io::loadPCDFile("Scanner25D.pcd", *scene);
+
+    // load the object
+    PointCloudT::Ptr object(new PointCloudT);
+    pcl::io::loadPCDFile(OBJECT_PATH, *object);
+    voxelGrid(object, object, 0.005f);
+
+    // add noise
+    scene = addGaussianNoise(scene, noise);
+
+    // calculate pose
+    Eigen::Matrix4f poseGlobal, poseLocal;
+    {
+        pcl::ScopeTime t("Execution time");
+
+        // point cloud filtering
+        spatialFilter(scene, scene);
+        smoothing(scene, scene);
+        planarSegmentation(scene, scene);
+        outlierRemoval(scene, scene);
+        scene = euclideanCusterExtraction(scene);
+
+        // pose estimation 3D to 3D
+        poseGlobal = computeGlobalPose(scene, object);
+        pcl::transformPointCloud(*object, *object, poseGlobal);
+        poseLocal = findLocalAlignment(scene, object);
+        pcl::transformPointCloud(*object, *object, poseLocal);
+    }
+    result = poseLocal * poseGlobal;
+
+    // show the alignment in origin scene
+    {
+        PointCloudT::Ptr _scene(new PointCloudT);
+        PointCloudT::Ptr _object(new PointCloudT);
+
+        pcl::io::loadPCDFile("Scanner25D.pcd", *_scene);
+        spatialFilter(_scene, _scene);
+
+        pcl::io::loadPCDFile(OBJECT_PATH, *_object);
+        voxelGrid(_object, _object, 0.005f);
+        pcl::transformPointCloud(*_object, *_object, result);
+
+        pcl::visualization::PCLVisualizer view("After alignment");
+        view.addPointCloud<PointT>(_object, ColorHandlerT(_object, 255, 0 , 0), "Object");
+        view.addPointCloud<PointT>(_scene, ColorHandlerT(_scene, 0, 255, 0), "Origin");
+        view.spin();
+    }
+
+    return result;
 }

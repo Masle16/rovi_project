@@ -11,12 +11,14 @@ SamplePlugin::SamplePlugin():RobWorkStudioPlugin("SamplePluginUI", QIcon(":/pa_i
     connect(_timer, SIGNAL(timeout()), this, SLOT(timer()));
 
 	// now connect stuff from the ui component
-    connect(_btn_sds,  SIGNAL(pressed()),         this, SLOT(btnPressed()));
-    connect(_btn_im,   SIGNAL(pressed()),         this, SLOT(btnPressed()) );
-    connect(_btn_scan, SIGNAL(pressed()),         this, SLOT(btnPressed()) );
-    connect(_btn0,     SIGNAL(pressed()),         this, SLOT(btnPressed()) );
-    connect(_btn1,     SIGNAL(pressed()),         this, SLOT(btnPressed()) );
-    connect(_spinBox,  SIGNAL(valueChanged(int)), this, SLOT(btnPressed()) );
+    connect(_btn_sds,        SIGNAL(pressed()),         this, SLOT(btnPressed()) );
+    connect(_btn_move,       SIGNAL(pressed()),         this, SLOT(btnPressed()) );
+    connect(_btn_noise,      SIGNAL(pressed()),         this, SLOT(btnPressed()) );
+    connect(_btn_im,         SIGNAL(pressed()),         this, SLOT(btnPressed()) );
+    connect(_btn_scan,       SIGNAL(pressed()),         this, SLOT(btnPressed()) );
+    connect(_btn0,           SIGNAL(pressed()),         this, SLOT(btnPressed()) );
+    connect(_btn1,           SIGNAL(pressed()),         this, SLOT(btnPressed()) );
+    connect(_spinBox,        SIGNAL(valueChanged(int)), this, SLOT(btnPressed()) );
 
 	_framegrabber = NULL;
 	
@@ -163,52 +165,84 @@ void SamplePlugin::btnPressed() {
     else if( obj==_btn_im ) {
 		getImage();
 	}
-    else if( obj == _btn_sds ) {
+    else if( obj == _btn_noise ) {
+        // load the random poses
+        std::vector<Pose> poses = loadRandomPoses();
+
         // containers
-        std::vector<Vec> positions;
-        std::vector<float> angles, noises;
-        std::vector<double> times;
+        std::vector<double> angles, noises, positions, times;
 
         // analyze for different noises
-        std::vector<float> noise { 0.00001f, 0.0001f, 0.001f, 0.01f, 0.1f };
+        //std::vector<double> noise { 0.0, 0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.002, 0.003, 0.004 };
+        std::vector<double> noise { 0.0, 0.00001 };
 
         for (std::size_t i = 0; i < noise.size(); i++) {
             std::cout << "Noise: " << noise[i] << std::endl;
 
-            for (std::size_t j = 0; j < 30; j++) {
-                std::cout << j << " / " << 30 << std::endl;
+            for (std::size_t j = 0; j < poses.size(); j++) {
+                std::cout << j << " / " << poses.size() << std::endl;
 
-                // move object to random pose
-                moveFrame(_wc, _state);
+                // move object to random posed
+                moveFrame(_wc, _state, "Duck", poses[j]);
                 getRobWorkStudio()->setState(_state);
 
                 // create pcd file
                 get25DImage();
 
                 // perform alignment
-                Eigen::Matrix4f pose = Eigen::Matrix4f::Identity();
+                Eigen::Matrix4f poseMatrix = Eigen::Matrix4f::Identity();
                 {
                     pcl::ScopeTime t("Alignment time");
-                    pose = alignment(noise[i]);
+                    poseMatrix = alignment(noise[i]);
                     times.push_back(t.getTime());
                 }
 
                 // calculate error
-                std::pair<float, Vec> diffs = calcError(pose, _wc, _state);
+                Pose estimatedPose = matrix2Transform(poseMatrix);
+                std::pair<double, double> diffs = calcError(_wc, _state, estimatedPose, poses[j]);
 
                 // store data
                 angles.push_back(std::get<0>(diffs));
                 positions.push_back(std::get<1>(diffs));
-                noises.push_back(noise[0]);
+                noises.push_back(noise[i]);
+
+                // save scene with object
+                std::string fileName = "simulated_depth_sensor/data/point_cloud_estimations/";
+                fileName = fileName + "cloud_" + std::to_string((i*poses.size())+j) + ".pcd";
+                saveSceneWithObject(fileName, poseMatrix);
             }
         }
 
         // save data to file
-        const std::string filePath = "/home/mathi/Documents/rovi/rovi_project/simulated_depth_sensor/data/data.txt";
+        const std::string filePath = "simulated_depth_sensor/data/data.txt";
         save2File(filePath, noises, times, angles, positions);
-	}
-    else if (obj == _btn_sds) {
+    }
+    else if (obj == _btn_scan) {
         get25DImage();
+    }
+    else if (obj == _btn_move) {
+        moveFrameRandom(_wc, _state, "Duck");
+        getRobWorkStudio()->setState(_state);
+    }
+    else if (obj == _btn_sds) {
+        // get real pose
+        MovFrame *frame = _wc->findFrame<MovFrame>("Duck");
+        Pose realPose = frame->getTransform(_state);
+
+        // create pcd file
+        get25DImage();
+
+        // perform alignment
+        Eigen::Matrix4f poseMatrix = Eigen::Matrix4f::Identity();
+        {
+            pcl::ScopeTime t("Alignment time");
+            poseMatrix = alignment();
+        }
+
+        // calculate error
+        Pose estimatedPose = matrix2Transform(poseMatrix);
+        //std::pair<float, float> diffs = calcError(_wc, _state, estimatedPose, realPose);
+        calcError(_wc, _state, estimatedPose, realPose);
     }
 }
 

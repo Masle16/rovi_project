@@ -10,39 +10,22 @@ roll = data(:,4);
 pitch = data(:,5);
 yaw = data(:,6);
 
-figure('Name', 'Trajectory plots')
-h1=subplot(6,1,1)
+figure('Name', 'X, y and z.')
 plot(x)
-title('x')
-ylabel('[m]')
-xlabel('Configuration')
-
-h2=subplot(6,1,2)
+hold on
 plot(y)
-title('y')
-ylabel('[m]')
-xlabel('Configuration')
-
-h3=subplot(6,1,3)
 plot(z)
-title('z')
-ylabel('[m]')
-xlabel('Configuration')
+ylabel('Position [m]')
+xlabel('Configurations')
+legend('x', 'y', 'z')
+hold off
 
-h4=subplot(6,1,4)
+figure('name', 'Roll, pitch and yaw.')
 plot(roll)
-title('Roll')
-ylabel('[rad]')
-xlabel('Configuration')
-
-h5=subplot(6,1,5)
+hold on
 plot(pitch)
-title('Pitch')
-ylabel('[rad]')
-xlabel('Configuration')
-
-h6=subplot(6,1,6)
 plot(yaw)
-title('Yaw')
-ylabel('[rad]')
-xlabel('Configuration')
+ylabel('Angle [rad]')
+xlabel('Configurations')
+legend('Roll', 'Pitch', 'Yaw')
+hold off

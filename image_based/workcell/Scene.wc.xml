@@ -2,9 +2,9 @@
 
 	<Frame name="Table" refframe="WORLD" type="Fixed">
 		<RPY>0 0 0</RPY> <Pos>0 0 -0.1</Pos>		
-		<Drawable name="Table" refframe="Table">
-    		<Polytope file="table/Sigmund_table" />
-     	</Drawable>
+		 <Drawable name="Table" refframe="Table">
+         <Polytope file="table/Sigmund_table" />
+     </Drawable>
 	</Frame>
 
 	<Frame name="URReference" refframe="Table" type="Movable">
@@ -15,6 +15,7 @@
 
 <!--insert gripper definition-->
 
+
 	<Frame name="Tool" refframe="UR-6-85-5-A.TCP">
 		<RPY>0 0 0</RPY> <Pos>0 0 0.072</Pos>
 	</Frame>
@@ -23,30 +24,29 @@
 	<Frame name="GraspTCP" refframe="UR-6-85-5-A.TCP" type="Fixed">
 		<RPY>0 0 0</RPY> <Pos>0 0 0.15</Pos>
 	</Frame>
-	
+
 	<Frame name="Duck" refframe="Table" type="Movable" daf="true">
-		<RPY>0 0 90</RPY> <Pos>0.25 0.474 0.15285</Pos>
+		<RPY>119.655720 0 0</RPY> <Pos>-0.145188 0.443078 0.13275</Pos>
 		<Drawable name="Duck" refframe="Duck">
-			<Polytope file="parts/Duck" />
+			<Polytope file="parts/rubber_duck" />
 		</Drawable>
 	</Frame>
 
-	<Frame name="Camera" refframe="Table" type="Movable" daf="true">
-		<RPY>90 0 90</RPY> <Pos>-0.25 0.474 0.1605</Pos>
-		<Drawable name="Camera" refframe="Camera">
-			<Polytope file="parts/Cam" />
+	<!-- <Frame name="Trex" refframe="Table" type="Movable" daf="true">
+		<RPY>0 0 0</RPY> <Pos>-0.25 0.474 0.1535</Pos>
+		<Drawable name="Trex" refframe="Trex">
+			<Polytope file="parts/trex" />
 		</Drawable>
 	</Frame>
 
-	<Frame name="Ape" refframe="Table" type="Movable" daf="true">
-		<RPY>90 0 90</RPY> <Pos>0.0 0.474 0.15595</Pos>
-		<Drawable name="Ape" refframe="Ape">
-			<Polytope file="parts/Ape" />
+	<Frame name="GardenGnome" refframe="Table" type="Movable" daf="true">
+		<RPY>0 0 0</RPY> <Pos>0.0 0.474 0.1101</Pos>
+		<Drawable name="GardenGnome" refframe="GardenGnome">
+			<Polytope file="parts/garden_gnome" />
 		</Drawable>
-	</Frame>
+	</Frame> -->
 
 <!-- Walls for picking area -->
-
 	<!-- <Frame name="Wall1" refframe="Table" type="Fixed">
 		<RPY>0 0 0</RPY> <Pos>0.0 0.3065 0.17</Pos>
 		<Drawable name="Wall1" refframe="Wall1">
@@ -82,10 +82,9 @@
 		<RPY>0 0 -25</RPY>
 		<Property name="Camera" desc="[fovy,width,height]">50 640 480</Property>
 	</Frame>
-
 	<Frame name="Camera_Left" refframe="WORLD" type="Movable">
-		<Pos>0 1.033 0.5</Pos>
-		<RPY>0 0 -55</RPY>
+		<Pos>0.2 1.033 1.325</Pos>
+		<RPY>0 0 -25</RPY>
 		<Property name="Camera" desc="[fovy,width,height]">50 640 480</Property>
 	</Frame>
 

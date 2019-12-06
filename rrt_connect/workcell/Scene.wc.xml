@@ -9,7 +9,7 @@
 
 	<Frame name="URReference" refframe="Table" type="Movable">
 		<!-- <RPY>0 0 0</RPY> <Pos>0 0 0.11</Pos> -->
-		<RPY>0 0 0</RPY> <Pos>0.2 0 0.11</Pos>
+		<RPY>205 0 0</RPY> <Pos>0.2 0 0.11</Pos>
 	</Frame>
 	<Include file="UR5/UR-6-85-5-A/Device.wc.xml" />
 
@@ -39,10 +39,10 @@
 	</Frame> -->
 
 	<Frame name="Cylinder" refframe="Table"  type="Movable" daf="true" >
-		<RPY> -90 0 180 </RPY>
-		<Pos>-0.25 0.474 0.15</Pos>
+		<RPY> 0 0 180 </RPY>
+		<!-- <Pos>-0.25 0.474 0.15</Pos> -->
 		<!-- <Pos>0.25 0.474 0.15 </Pos> -->
-		<!-- <Pos>0.0 0.474 0.15 </Pos> -->
+		<Pos>0.0 0.474 0.15 </Pos>
 		<!-- <Pos>0.3 -0.5 0.15</Pos> -->
 		<Drawable name="Cylinder" refframe="Cylinder">
 			<Polytope file="parts/cylinder" />
@@ -50,7 +50,7 @@
 	</Frame>
 
 	<Frame name="GraspTarget" refframe="Cylinder" type="Movable">
-		<RPY> 0 180 0 </RPY> <Pos> 0 0 0 </Pos>
+		<RPY> 180 0 0 </RPY> <Pos> 0 0 0 </Pos>
 	</Frame>
 
 	<!-- Walls for picking area -->
