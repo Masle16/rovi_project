@@ -12,7 +12,7 @@ SET(ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 SET(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 
 # Set the RobWork root (edit in .bashrc if necessary)
-SET(RW_ROOT /home/mathi/RobWork/RobWork)
+SET(RW_ROOT ~/RobWork/RobWork)
 
 # Verbose mode prints more info when doing make
 set(CMAKE_VERBOSE_MAKEFILE false)
@@ -30,10 +30,10 @@ LINK_DIRECTORIES( ${ROBWORK_LIBRARY_DIRS} )
 
 
 # Add the source files to build
-SET(SrcFiles p2p_interpolation.cpp)
+SET(SrcFiles main.cpp p2p_interpolation.cpp p2p_interpolation.h)
 
 # The shared library to build:
 ADD_EXECUTABLE(P2PInterpolation ${SrcFiles})
-TARGET_LINK_LIBRARIES(P2PInterpolation ${ROBWORK_LIBRARIES})
+TARGET_LINK_LIBRARIES(P2PInterpolation xerces-c ${ROBWORK_LIBRARIES})
 
 MESSAGE(${PROJECT_NAME} " done!")
