@@ -24,10 +24,10 @@
 		<RPY>0 0 0</RPY> <Pos>0 0 0.15</Pos>
 	</Frame>
 	
-	<Frame name="RubberDuck" refframe="Table" type="Movable" daf="true">
-		<RPY>180 0 0</RPY> <Pos>0.25 0.474 0.133</Pos>
-		<Drawable name="RubberDuck" refframe="RubberDuck">
-			<Polytope file="parts/rubber_duck" />
+	<Frame name="Duck" refframe="Table" type="Movable" daf="true">
+		<RPY>180 0 90</RPY> <Pos>0.25 0.474 0.133</Pos>
+		<Drawable name="Duck" refframe="Duck">
+			<Polytope file="parts/Duck" />
 		</Drawable>
 	</Frame>
 

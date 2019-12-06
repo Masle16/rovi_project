@@ -1,3 +1,5 @@
+#pragma once
+
 // INCLUDE
 #include <iostream>
 #include <chrono>
@@ -569,11 +571,11 @@ Eigen::Matrix4f computeGlobalPose(const PointCloudT::Ptr &scene,
                                   const PointCloudT::Ptr &object,
                                   const float normalEstimationRadiusSearch=0.01,
                                   const float featureRadiusSearch=0.01,
-                                  const int maxIterations=75000,
+                                  const int maxIterations=50000,
                                   const int numOfSamples2GeneratePose=3,
-                                  const int numOfNearestFeatures=5,
+                                  const int numOfNearestFeatures=3,
                                   const float similarityThreshold=0.9f,
-                                  const float inlierThreshold=0.01,
+                                  const float inlierThreshold=1.5*0.005f,
                                   const float inlierFraction=0.25f) {
     std::cout << "Computing global pose.." << std::endl;
     Eigen::Matrix4f result = Eigen::Matrix4f::Identity();
@@ -623,13 +625,6 @@ Eigen::Matrix4f computeGlobalPose(const PointCloudT::Ptr &scene,
                   << "\t\t"   << result(2,0) << " " << result(2,1) << " " << result(2,2) << std::endl;
         std::cout << "\tP =\t"<< result(0,3) << " " << result(1,3) << " " << result(2,3) << std::endl;
         std::cout << "\tInliers: " << align.getInliers().size() << " / " << object->size() << std::endl;
-//        // show alignment
-//        {
-//            pcl::visualization::PCLVisualizer view("Global alignment");
-//            view.addPointCloud(scene, ColorHandlerT(scene, 0.0, 255.0, 0.0), "scene");
-//            view.addPointCloud(objectAligned, ColorHandlerT(objectAligned, 255.0, 0.0, 0.0), "objectAligned");
-//            view.spin();
-//        }
         return result;
     }
     else {
@@ -729,11 +724,24 @@ PointCloudT::Ptr addGaussianNoise(const PointCloudT::Ptr &input, const float std
  * @param scene : point cloud
  * @param fileName : path and name of the decired save location
  */
-void saveSceneWithObject(const PointCloudT::Ptr &object, const PointCloudT::Ptr &scene, const std::string &fileName) {
+void saveSceneWithObject(const std::string &fileName, const Eigen::Matrix4f &pose) {
     std::cout << "Saving view to --> " << fileName << std::endl;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr result(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-    // load object --> cloud
+    // load object
+    PointCloudT::Ptr object(new PointCloudT);
+    pcl::io::loadPCDFile(OBJECT_PATH, *object);
+    voxelGrid(object, object, 0.005f);
+
+    // transform object into scene
+    pcl::transformPointCloud(*object, *object, pose);
+
+    // load scene
+    PointCloudT::Ptr scene(new PointCloudT);
+    pcl::io::loadPCDFile("Scanner25D.pcd", *scene);
+    spatialFilter(scene, scene);
+
+    // load object --> result
     std::uint8_t r = 255, g = 0, b = 0; // Red
     std::uint32_t rgb = ((std::uint32_t)r << 16 | (std::uint32_t)g << 8 | (std::uint32_t)b);
     for (std::size_t i = 0; i < object->points.size(); i++) {
@@ -745,7 +753,7 @@ void saveSceneWithObject(const PointCloudT::Ptr &object, const PointCloudT::Ptr 
         result->points.push_back(point);
     }
 
-    // load scene --> cloud
+    // load scene --> result
     r = 0, g = 255, b = 0; // Green
     rgb = ((std::uint32_t)r << 16 | (std::uint32_t)g << 8 | (std::uint32_t)b);
     for (std::size_t i = 0; i < scene->points.size(); i++) {
@@ -765,7 +773,7 @@ void saveSceneWithObject(const PointCloudT::Ptr &object, const PointCloudT::Ptr 
     pcl::io::savePCDFile(fileName, *result);
 }
 
-Eigen::Matrix4f alignment(const float noise=0.0001f) {
+Eigen::Matrix4f alignment(const float noise=0.0) {
     Eigen::Matrix4f result;
 
     // load the scene
@@ -787,10 +795,11 @@ Eigen::Matrix4f alignment(const float noise=0.0001f) {
 
         // point cloud filtering
         spatialFilter(scene, scene);
+        voxelGrid(scene, scene, 0.005f);
         smoothing(scene, scene);
         planarSegmentation(scene, scene);
         outlierRemoval(scene, scene);
-        scene = euclideanCusterExtraction(scene);
+        //scene = euclideanCusterExtraction(scene);
 
         // pose estimation 3D to 3D
         poseGlobal = computeGlobalPose(scene, object);
@@ -800,24 +809,24 @@ Eigen::Matrix4f alignment(const float noise=0.0001f) {
     }
     result = poseLocal * poseGlobal;
 
-    // show the alignment in origin scene
-    {
-        PointCloudT::Ptr _scene(new PointCloudT);
-        PointCloudT::Ptr _object(new PointCloudT);
+//    // show the alignment in origin scene
+//    {
+//        PointCloudT::Ptr _scene(new PointCloudT);
+//        PointCloudT::Ptr _object(new PointCloudT);
 
-        pcl::io::loadPCDFile("Scanner25D.pcd", *_scene);
-        spatialFilter(_scene, _scene);
+//        pcl::io::loadPCDFile("Scanner25D.pcd", *_scene);
+//        spatialFilter(_scene, _scene);
+//        voxelGrid(scene, scene);
 
-        pcl::io::loadPCDFile(OBJECT_PATH, *_object);
-//        pcl::transformPointCloud(*_object, *_object, poseGlobal);
-//        pcl::transformPointCloud(*_object, *_object, poseLocal);
-        pcl::transformPointCloud(*_object, *_object, result);
+//        pcl::io::loadPCDFile(OBJECT_PATH, *_object);
+//        voxelGrid(_object, _object, 0.005f);
+//        pcl::transformPointCloud(*_object, *_object, result);
 
-        pcl::visualization::PCLVisualizer view("After alignment");
-        view.addPointCloud<PointT>(_object, ColorHandlerT(_object, 255, 0 , 0), "Object");
-        view.addPointCloud<PointT>(_scene, ColorHandlerT(_scene, 0, 255, 0), "Origin");
-        view.spin();
-    }
+//        pcl::visualization::PCLVisualizer view("After alignment");
+//        view.addPointCloud<PointT>(_object, ColorHandlerT(_object, 255, 0 , 0), "Object");
+//        view.addPointCloud<PointT>(_scene, ColorHandlerT(_scene, 0, 255, 0), "Origin");
+//        view.spin();
+//    }
 
     return result;
 }

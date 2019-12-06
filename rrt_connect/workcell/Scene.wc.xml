@@ -13,11 +13,15 @@
 
 	<Frame name="URReference" refframe="Table" type="Movable">
 		<!-- <RPY>0 0 0</RPY> <Pos>0 0 0.11</Pos> -->
+<<<<<<< HEAD
 <<<<<<< HEAD:Project_WorkCell/Scene.wc.xml
 		<RPY>0 0 0</RPY> <Pos>0 0 0.11</Pos>
 =======
 		<RPY>0 0 0</RPY> <Pos>0.2 0 0.11</Pos>
 >>>>>>> 2f1845718460b8aa70a1e042f260dde97a50314f:rrt_connect/workcell/Scene.wc.xml
+=======
+		<RPY>205 0 0</RPY> <Pos>0.2 0 0.11</Pos>
+>>>>>>> be2c119e3d41b5892dec589565b0ea752a163ae4
 	</Frame>
 	<Include file="UR5/UR-6-85-5-A/Device.wc.xml" />
 
@@ -47,13 +51,18 @@
 	</Frame> -->
 
 	<Frame name="Cylinder" refframe="Table"  type="Movable" daf="true" >
+<<<<<<< HEAD
 <<<<<<< HEAD:Project_WorkCell/Scene.wc.xml
 		<RPY> -90 0 180 </RPY> <Pos> -0.25 0.474 0.15 </Pos>
 =======
 		<RPY> -90 0 180 </RPY>
 		<Pos>-0.25 0.474 0.15</Pos>
+=======
+		<RPY> 0 0 180 </RPY>
+		<!-- <Pos>-0.25 0.474 0.15</Pos> -->
+>>>>>>> be2c119e3d41b5892dec589565b0ea752a163ae4
 		<!-- <Pos>0.25 0.474 0.15 </Pos> -->
-		<!-- <Pos>0.0 0.474 0.15 </Pos> -->
+		<Pos>0.0 0.474 0.15 </Pos>
 		<!-- <Pos>0.3 -0.5 0.15</Pos> -->
 >>>>>>> 2f1845718460b8aa70a1e042f260dde97a50314f:rrt_connect/workcell/Scene.wc.xml
 		<Drawable name="Cylinder" refframe="Cylinder">
@@ -62,10 +71,14 @@
 	</Frame>
 
 	<Frame name="GraspTarget" refframe="Cylinder" type="Movable">
+<<<<<<< HEAD
 <<<<<<< HEAD:Project_WorkCell/Scene.wc.xml
 		<RPY> 180 0 0 </RPY> <Pos> 0 0 0 </Pos>
 =======
 		<RPY> 0 180 0 </RPY> <Pos> 0 0 0 </Pos>
+=======
+		<RPY> 180 0 0 </RPY> <Pos> 0 0 0 </Pos>
+>>>>>>> be2c119e3d41b5892dec589565b0ea752a163ae4
 	</Frame>
 
 	<!-- Walls for picking area -->
