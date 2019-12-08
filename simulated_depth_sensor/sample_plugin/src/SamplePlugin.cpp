@@ -173,8 +173,7 @@ void SamplePlugin::btnPressed() {
         std::vector<double> angles, noises, positions, times;
 
         // analyze for different noises
-        //std::vector<double> noise { 0.0, 0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.002, 0.003, 0.004 };
-        std::vector<double> noise { 0.0, 0.00001 };
+        std::vector<double> noise { 0.0, 0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.002, 0.003, 0.004 };
 
         for (std::size_t i = 0; i < noise.size(); i++) {
             std::cout << "Noise: " << noise[i] << std::endl;
@@ -182,7 +181,7 @@ void SamplePlugin::btnPressed() {
             for (std::size_t j = 0; j < poses.size(); j++) {
                 std::cout << j << " / " << poses.size() << std::endl;
 
-                // move object to random posed
+                // move object to pose
                 moveFrame(_wc, _state, "Duck", poses[j]);
                 getRobWorkStudio()->setState(_state);
 

@@ -164,45 +164,10 @@ void SamplePlugin::btnPressed() {
 		getImage();
 	}
 	else if( obj==_btn_scan ){
-		//get25DImage();
-		get25DImages();
+		get25DImage();
 	}
 	
 	
-}
-
-void SamplePlugin::get25DImage() {
-	if (_framegrabber25D != NULL) {
-		for (size_t j = 0; j < 30; j++) {
-			Frame* rubberDuck = _wc->findFrame("RubberDuck");
-			rw::kinematics::State state = _wc->getDefaultState();
-		}
-		for( int i = 0; i < _cameras25D.size(); i ++)
-			// Get the image as a RW image
-			Frame* cameraFrame25D = _wc->findFrame(_cameras25D[i]); // "Camera");
-			_framegrabber25D->grab(cameraFrame25D, _state);
-
-			//const Image& image = _framegrabber->getImage();
-
-			const rw::geometry::PointCloud* img = &(_framegrabber25D->getImage());
-
-			std::ofstream output(_cameras25D[i] + ".pcd");
-			output << "# .PCD v.5 - Point Cloud Data file format\n";
-			output << "FIELDS x y z\n";
-			output << "SIZE 4 4 4\n";
-			output << "TYPE F F F\n";
-			output << "WIDTH " << img->getWidth() << "\n";
-			output << "HEIGHT " << img->getHeight() << "\n";
-			output << "POINTS " << img->getData().size() << "\n";
-			output << "DATA ascii\n";
-            for(const auto &p_tmp : img->getData())
-			{
-				rw::math::Vector3D<float> p = p_tmp;
-				output << p(0) << " " << p(1) << " " << p(2) << "\n";
-			}
-			output.close();
-		}
-	}
 }
 
 void SamplePlugin::get25DImage() {

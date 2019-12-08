@@ -501,7 +501,7 @@ Eigen::Matrix4f findGlobalAlignment(PointCloudT::Ptr scene,
  */
 Eigen::Matrix4f findLocalAlignment(const PointCloudT::Ptr &scene,
                                    const PointCloudT::Ptr &object,
-                                   const std::size_t maxIterations=50,
+                                   const std::size_t maxIterations=500,
                                    const float inlierThreshold=0.0001f) {
     std::cout << "Local alignment.." << std::endl;
     Eigen::Matrix4f result;
@@ -571,7 +571,7 @@ Eigen::Matrix4f computeGlobalPose(const PointCloudT::Ptr &scene,
                                   const PointCloudT::Ptr &object,
                                   const float normalEstimationRadiusSearch=0.01,
                                   const float featureRadiusSearch=0.01,
-                                  const int maxIterations=50000,
+                                  const int maxIterations=80000,
                                   const int numOfSamples2GeneratePose=3,
                                   const int numOfNearestFeatures=3,
                                   const float similarityThreshold=0.9f,

@@ -32,7 +32,11 @@ d 1.000000
 illum 2
 map_Kd Steelplt.png
 
+<<<<<<< HEAD
 newmtl Material.002
+=======
+newmtl Material.001
+>>>>>>> 2aefb15914f95a8f55e2d4a0022780cbf7c022d5
 Ns 96.078431
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
