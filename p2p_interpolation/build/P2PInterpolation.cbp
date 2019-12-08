@@ -35,13 +35,12 @@
 				<Option compiler="gcc"/>
 				<Compiler>
 					<Add option="-DBOOST_DISABLE_ASSERTS"/>
-					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/eigen3"/>
+					<Add directory="/usr/include/eigen3"/>
 					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../src"/>
 					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/rwyaobi"/>
 					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/rwpqp"/>
 					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/qhull/src"/>
 					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/csgjs/src"/>
-					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/zlib"/>
 					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/assimp/include"/>
 					<Add directory="/usr/include/c++/8"/>
 					<Add directory="/usr/include/x86_64-linux-gnu/c++/8"/>
@@ -67,13 +66,12 @@
 				<Option compiler="gcc"/>
 				<Compiler>
 					<Add option="-DBOOST_DISABLE_ASSERTS"/>
-					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/eigen3"/>
+					<Add directory="/usr/include/eigen3"/>
 					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../src"/>
 					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/rwyaobi"/>
 					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/rwpqp"/>
 					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/qhull/src"/>
 					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/csgjs/src"/>
-					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/zlib"/>
 					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/assimp/include"/>
 					<Add directory="/usr/include/c++/8"/>
 					<Add directory="/usr/include/x86_64-linux-gnu/c++/8"/>

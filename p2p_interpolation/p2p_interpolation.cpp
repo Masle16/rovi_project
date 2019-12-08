@@ -5,53 +5,6 @@ P2P_interpolator::P2P_interpolator()
 
 }
 
-void P2P_interpolator::ts_interpolation(std::vector<rw::math::Vector3D<double>> p, std::vector<rw::math::RPY<double>> r) {
-
-    double time = 10;
-    double time_step = 0.1;
-
-
-    std::vector<rw::math::Vector3D<double>> positions1;
-    std::vector<rw::math::Vector3D<double>> positions2;
-    std::vector<rw::math::Vector3D<double>> ramp_up;
-
-    // Linear interpolation
-
-    for (double i = 0; i < time; i += time_step) {
-        std::cout << p[0]+constant_vel(i, 0, time)*(p[1]-p[0]) << std::endl;
-        positions1.push_back(p[0]+constant_vel(i, 0, time)*(p[1]-p[0]));
-        //std::cout << i << std::endl;
-    }
-
-    std::cout << "Velocity between points on the linear interpolation: " << (p[1]-p[0])/time << std::endl;
-
-    for (double i = 0; i < 4; i += time_step) {
-        ramp_up.push_back(p[0]+ramp_up_vel(i, 0, 4)*(positions1[50]-p[0]));
-        std::cout << p[0]+ramp_up_vel(i, 0, 4)*(positions1[50]-p[0]) << std::endl;
-    }
-
-    std::cout << "Velocity between points on the end of the ramp up: " << (*ramp_up.end()-*(ramp_up.end()-1))/time_step << std::endl;
-    std::cout << *ramp_up.end() << positions1[50] << std::endl;
-
-    for (double i = 0; i < time; i += time_step) {
-        //std::cout << p[1]+constant_vel(i, 0, time)*(p[2]-p[1]) << std::endl;
-        positions2.push_back(p[1]+constant_vel(i, 0, time)*(p[2]-p[1]));
-    }
-
-    // Parabolic blend
-
-    double T = 10; // Intersection in time.
-    double tau = 3; // The width of the blend.
-    rw::math::Vector3D<double> v1 = (p[1]-p[0])/(10);
-    rw::math::Vector3D<double> v2 = (p[2]-p[1])/(10);
-
-    std::cout << positions1[70] << std::endl;
-    std::cout << parabolic_blend(7-T, p[1], v1, v2, tau) << std::endl;
-    std::cout << positions2[30] << std::endl;
-    std::cout << parabolic_blend(13-T, p[1], v1, v2, tau) << std::endl;
-
-}
-
 double P2P_interpolator::constant_vel(double t, double t0, double t1) {
     return (t-t0)/(t1-t0);
 }
@@ -125,10 +78,12 @@ std::map<int, rw::math::Q> P2P_interpolator::q_interpolation(std::vector<rw::mat
         //std::cout << "Next point" << std::endl;
     }
 
+    /*
     std::map<int, rw::math::Q>::iterator it;
     for (it = interpolation.begin(); it != interpolation.end(); it++) {
         std::cout << it->first << ", " << it->second << std::endl;
     }
+    */
 
     return interpolation;
 }
@@ -186,10 +141,12 @@ std::map<int, rw::math::Vector3D<double>> P2P_interpolator::xyz_interpolation(st
         //std::cout << "Next point" << std::endl;
     }
 
+    /*
     std::map<int, rw::math::Vector3D<double>>::iterator it;
     for (it = interpolation.begin(); it != interpolation.end(); it++) {
         std::cout << it->first << ", " << it->second << std::endl;
     }
+    */
 
     return interpolation;
 }
@@ -239,12 +196,55 @@ std::map<int, rw::math::Quaternion<double>> P2P_interpolator::quat_interpolation
 
 rw::math::Quaternion<double> P2P_interpolator::quat_int(rw::math::Quaternion<double> q1, rw::math::Quaternion<double> q2, double T) {
     double angle = std::acos( q1.getQw() * q2.getQw() + q1.getQx() * q2.getQx() + q1.getQy() * q2.getQy() + q1.getQz() * q2.getQz() );
+    std::cout << "Angle: " << angle << std::endl;
     //std::cout << std::sin(angle) << std::endl;
     return (std::sin((1-T)*angle))/(std::sin(angle))*q1 + (std::sin(T*angle))/(std::sin(angle))*q2;
 }
 
-void P2P_interpolator::print_q_to_rwplay(rw::models::WorkCell::Ptr wc, std::map<int, rw::math::Q> path) {
+rw::trajectory::TimedStatePath P2P_interpolator::inverse_kin(rw::models::SerialDevice::Ptr robot, rw::kinematics::State init_state, rw::math::Q init_joint_config, std::map<int, rw::math::Vector3D<double>> xyz, std::map<int, rw::math::Quaternion<double>> quat) {
+
+    file_output.open(toolSpace_filename);
+    rw::math::Transform3D<double> FK;
+
+    rw::trajectory::TimedStatePath output_path;
+    rw::kinematics::State state = init_state;
+    rw::invkin::ClosedFormIKSolverUR::Ptr ikSolver = rw::common::ownedPtr(new rw::invkin::ClosedFormIKSolverUR(robot, state));
 
 
+    rw::math::Q last_best = init_joint_config;
+    for (int i = 0; i < int(xyz.size()); i++) {
+
+        rw::math::Transform3D<double> trans(xyz.find(i)->second/100., quat.find(i)->second.toRotation3D());
+        //std::cout << trans << std::endl;
+        std::vector<rw::math::Q> ik_result = ikSolver->solve(trans, state);
+        //std::cout << ik_result.size() << std::endl;
+
+        size_t best_result = 0;
+        rw::math::Q q_best;
+        rw::math::Q q_dif;
+        q_best = last_best-ik_result[0];
+        for (size_t j = 1; j < ik_result.size(); j++) {
+            q_dif = last_best-ik_result[j];
+            if (q_dif.norm1() < q_best.norm1()) {
+                q_best = q_dif;
+                best_result = j;
+                //std::cout << i << " - " << q_best.norm1() << std::endl;
+            }
+        }
+        last_best = ik_result[best_result];
+        //std::cout << last_best << std::endl;
+
+        robot->setQ(ik_result[best_result], state);
+        output_path.push_back(rw::trajectory::TimedState(double(xyz.find(i)->first)/10., state));
+
+        std::cout << robot->baseTend(state) << std::endl;
+        FK = robot->baseTend(state);
+        file_output << double(xyz.find(i)->first)/10. << "," << FK.P()[0] << "," << FK.P()[1] << "," << FK.P()[2] <<
+                       "," << FK.R().getRow(0)[0] << "," << FK.R().getRow(0)[1] << "," << FK.R().getRow(0)[2] <<
+                       "," << FK.R().getRow(1)[0] << "," << FK.R().getRow(1)[1] << "," << FK.R().getRow(1)[2] <<
+                       "," << FK.R().getRow(2)[0] << "," << FK.R().getRow(2)[1] << "," << FK.R().getRow(2)[2] << std::endl;
+    }
+    file_output.close();
+    return output_path;
 }
 

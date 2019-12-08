@@ -3,7 +3,7 @@
 	<Frame name="Table" refframe="WORLD" type="Fixed">
 		<RPY>0 0 0</RPY> <Pos>0 0 -0.1</Pos>		
 		 <Drawable name="Table" refframe="Table">
-         <Polytope file="table/Sigmund_table" />
+         <Polytope file="table/Table" />
      </Drawable>
 	</Frame>
 
@@ -27,53 +27,9 @@
 	<Frame name="Duck" refframe="Table" type="Movable" daf="true">
 		<RPY>180 0 90</RPY> <Pos>0.25 0.474 0.133</Pos>
 		<Drawable name="Duck" refframe="Duck">
-			<Polytope file="parts/Duck" />
+            <Polytope file="parts/Duck" />
 		</Drawable>
 	</Frame>
-
-	<!-- <Frame name="Trex" refframe="Table" type="Movable" daf="true">
-		<RPY>0 0 0</RPY> <Pos>-0.25 0.474 0.1535</Pos>
-		<Drawable name="Trex" refframe="Trex">
-			<Polytope file="parts/trex" />
-		</Drawable>
-	</Frame>
-
-	<Frame name="GardenGnome" refframe="Table" type="Movable" daf="true">
-		<RPY>0 0 90</RPY> <Pos>0.0 0.474 0.1101</Pos>
-		<Drawable name="GardenGnome" refframe="GardenGnome">
-			<Polytope file="parts/garden_gnome" />
-		</Drawable>
-	</Frame> -->
-
-<!-- Walls for picking area
-
-	<Frame name="Wall1" refframe="Table" type="Fixed">
-		<RPY>0 0 90</RPY> <Pos>0.0 0.3065 0.17</Pos>
-		<Drawable name="Wall1" refframe="Wall1">
-			<Polytope file="parts/Wall_1" />
-		</Drawable>
-	</Frame>
-
-	<Frame name="Wall2" refframe="Table" type="Fixed">
-		<RPY>0 0 90</RPY> <Pos>0.0 0.5955 0.17</Pos>
-		<Drawable name="Wall2" refframe="Wall2">
-			<Polytope file="parts/Wall_1" />
-		</Drawable>
-	</Frame>
-
-	<Frame name="Wall3" refframe="Table" type="Fixed">
-		<RPY>0 0 90</RPY> <Pos>0.396 0.45 0.17</Pos>
-		<Drawable name="Wall3" refframe="Wall3">
-			<Polytope file="parts/Wall_2" />
-		</Drawable>
-	</Frame>
-
-	<Frame name="Wall4" refframe="Table" type="Fixed">
-		<RPY>0 0 90</RPY> <Pos>-0.396 0.45 0.17</Pos>
-		<Drawable name="Wall4" refframe="Wall4">
-			<Polytope file="parts/Wall_2" />
-		</Drawable>
-	</Frame> -->
 
 <!-- Cameras -->
 

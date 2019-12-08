@@ -8,19 +8,19 @@
     <Property>
      <Name>AngleUnit</Name>
      <Value>
-      <String>Radians</String>
+      <String>Degrees</String>
      </Value>
     </Property>
     <Property>
      <Name>DistanceUnit</Name>
      <Value>
-      <String>Meters</String>
+      <String>Centimeters</String>
      </Value>
     </Property>
     <Property>
      <Name>LastOpennedFiles</Name>
      <Value>
-      <StringList>/home/mathi/Documents/rovi/rovi_project/sparse_stereo/workcell/parts/Duck.3ds;/home/mathi/Documents/rovi/rovi_project/sparse_stereo/workcell/Scene.wc.xml</StringList>
+      <StringList>/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/workcell/parts/Duck.obj;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/workcell/Scene.wc.xml</StringList>
      </Value>
     </Property>
     <Property>
@@ -33,12 +33,6 @@
      <Name>PluginArea_Log</Name>
      <Value>
       <Integer>8</Integer>
-     </Value>
-    </Property>
-    <Property>
-     <Name>PluginArea_LuaConsole</Name>
-     <Value>
-      <Integer>1</Integer>
      </Value>
     </Property>
     <Property>
@@ -85,12 +79,6 @@
     </Property>
     <Property>
      <Name>PluginFloating_Log</Name>
-     <Value>
-      <Boolean>0</Boolean>
-     </Value>
-    </Property>
-    <Property>
-     <Name>PluginFloating_LuaConsole</Name>
      <Value>
       <Boolean>0</Boolean>
      </Value>
@@ -144,12 +132,6 @@
      </Value>
     </Property>
     <Property>
-     <Name>PluginVisible_LuaConsole</Name>
-     <Value>
-      <Boolean>0</Boolean>
-     </Value>
-    </Property>
-    <Property>
      <Name>PluginVisible_Planning</Name>
      <Value>
       <Boolean>0</Boolean>
@@ -188,37 +170,37 @@
     <Property>
      <Name>PreviousOpenDirectory</Name>
      <Value>
-      <String>/home/mathi/Documents/rovi/rovi_project/sparse_stereo/workcell/</String>
+      <String>/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/workcell/</String>
      </Value>
     </Property>
     <Property>
      <Name>QtMainWindowState</Name>
      <Value>
-      <IntList>0 0 0 -1 0 0 0 0 -3 0 0 0 3 0 0 0 0 0 0 1 18 0 0 3 -60 -4 2 0 0 0 6 -5 0 0 0 6 0 74 0 111 0 103 0 0 0 0 0 -1 -1 -1 -1 0 0 0 89 0 -1 -1 -1 -5 0 0 0 16 0 84 0 114 0 101 0 101 0 86 0 105 0 101 0 119 1 0 0 0 61 0 0 3 -60 0 0 0 -116 0 -1 -1 -1 -5 0 0 0 24 0 80 0 114 0 111 0 112 0 101 0 114 0 116 0 121 0 86 0 105 0 101 0 119 0 0 0 0 0 -1 -1 -1 -1 0 0 0 123 0 -1 -1 -1 -5 0 0 0 16 0 80 0 108 0 97 0 110 0 110 0 105 0 110 0 103 0 0 0 0 0 -1 -1 -1 -1 0 0 1 -119 0 -1 -1 -1 -5 0 0 0 30 0 87 0 111 0 114 0 107 0 99 0 101 0 108 0 108 0 32 0 69 0 100 0 105 0 116 0 111 0 114 0 0 0 0 0 -1 -1 -1 -1 0 0 0 -23 0 -1 -1 -1 -5 0 0 0 20 0 76 0 117 0 97 0 67 0 111 0 110 0 115 0 111 0 108 0 101 0 0 0 0 0 -1 -1 -1 -1 0 0 0 -116 0 -1 -1 -1 0 0 0 1 0 0 0 0 0 0 0 0 -4 2 0 0 0 1 -5 0 0 0 14 0 83 0 101 0 110 0 115 0 111 0 114 0 115 0 0 0 0 0 -1 -1 -1 -1 0 0 0 -113 0 -1 -1 -1 0 0 0 3 0 0 0 0 0 0 0 0 -4 1 0 0 0 2 -5 0 0 0 6 0 76 0 111 0 103 0 0 0 0 0 -1 -1 -1 -1 0 0 0 70 0 -1 -1 -1 -5 0 0 0 16 0 80 0 108 0 97 0 121 0 66 0 97 0 99 0 107 0 0 0 0 0 -1 -1 -1 -1 0 0 0 -97 0 -1 -1 -1 0 0 6 37 0 0 3 -60 0 0 0 4 0 0 0 4 0 0 0 8 0 0 0 8 -4 0 0 0 1 0 0 0 2 0 0 0 5 0 0 0 22 0 70 0 105 0 108 0 101 0 84 0 111 0 111 0 108 0 66 0 97 0 114 1 0 0 0 0 -1 -1 -1 -1 0 0 0 0 0 0 0 0 0 0 0 12 0 86 0 105 0 101 0 119 0 51 0 68 1 0 0 0 -75 -1 -1 -1 -1 0 0 0 0 0 0 0 0 0 0 0 38 0 83 0 116 0 97 0 110 0 100 0 97 0 114 0 100 0 86 0 105 0 101 0 119 0 115 0 86 0 105 0 101 0 119 0 51 0 68 1 0 0 1 -110 -1 -1 -1 -1 0 0 0 0 0 0 0 0 0 0 0 22 0 90 0 111 0 111 0 109 0 84 0 111 0 111 0 108 0 98 0 97 0 114 1 0 0 2 -105 -1 -1 -1 -1 0 0 0 0 0 0 0 0 0 0 0 20 0 80 0 108 0 117 0 103 0 105 0 110 0 115 0 66 0 97 0 114 1 0 0 3 10 -1 -1 -1 -1 0 0 0 0 0 0 0 0</IntList>
+      <IntList>0 0 0 -1 0 0 0 0 -3 0 0 0 3 0 0 0 0 0 0 0 0 0 0 0 0 -4 2 0 0 0 5 -5 0 0 0 6 0 74 0 111 0 103 0 0 0 0 0 -1 -1 -1 -1 0 0 0 89 0 -1 -1 -1 -5 0 0 0 16 0 84 0 114 0 101 0 101 0 86 0 105 0 101 0 119 0 0 0 0 0 -1 -1 -1 -1 0 0 0 -116 0 -1 -1 -1 -5 0 0 0 24 0 80 0 114 0 111 0 112 0 101 0 114 0 116 0 121 0 86 0 105 0 101 0 119 0 0 0 0 0 -1 -1 -1 -1 0 0 0 123 0 -1 -1 -1 -5 0 0 0 16 0 80 0 108 0 97 0 110 0 110 0 105 0 110 0 103 0 0 0 0 0 -1 -1 -1 -1 0 0 1 113 0 -1 -1 -1 -5 0 0 0 30 0 87 0 111 0 114 0 107 0 99 0 101 0 108 0 108 0 32 0 69 0 100 0 105 0 116 0 111 0 114 0 0 0 0 0 -1 -1 -1 -1 0 0 0 -27 0 -1 -1 -1 0 0 0 1 0 0 0 0 0 0 0 0 -4 2 0 0 0 1 -5 0 0 0 14 0 83 0 101 0 110 0 115 0 111 0 114 0 115 0 0 0 0 0 -1 -1 -1 -1 0 0 0 -119 0 -1 -1 -1 0 0 0 3 0 0 0 0 0 0 0 0 -4 1 0 0 0 2 -5 0 0 0 6 0 76 0 111 0 103 0 0 0 0 0 -1 -1 -1 -1 0 0 0 70 0 -1 -1 -1 -5 0 0 0 16 0 80 0 108 0 97 0 121 0 66 0 97 0 99 0 107 0 0 0 0 0 -1 -1 -1 -1 0 0 0 -115 0 -1 -1 -1 0 0 7 -128 0 0 3 -65 0 0 0 4 0 0 0 4 0 0 0 8 0 0 0 8 -4 0 0 0 1 0 0 0 2 0 0 0 5 0 0 0 22 0 70 0 105 0 108 0 101 0 84 0 111 0 111 0 108 0 66 0 97 0 114 1 0 0 0 0 -1 -1 -1 -1 0 0 0 0 0 0 0 0 0 0 0 12 0 86 0 105 0 101 0 119 0 51 0 68 1 0 0 0 -75 -1 -1 -1 -1 0 0 0 0 0 0 0 0 0 0 0 38 0 83 0 116 0 97 0 110 0 100 0 97 0 114 0 100 0 86 0 105 0 101 0 119 0 115 0 86 0 105 0 101 0 119 0 51 0 68 1 0 0 1 -110 -1 -1 -1 -1 0 0 0 0 0 0 0 0 0 0 0 22 0 90 0 111 0 111 0 109 0 84 0 111 0 111 0 108 0 98 0 97 0 114 1 0 0 2 -105 -1 -1 -1 -1 0 0 0 0 0 0 0 0 0 0 0 20 0 80 0 108 0 117 0 103 0 105 0 110 0 115 0 66 0 97 0 114 1 0 0 3 10 -1 -1 -1 -1 0 0 0 0 0 0 0 0</IntList>
      </Value>
     </Property>
     <Property>
      <Name>WindowHeight</Name>
      <Value>
-      <Integer>1025</Integer>
+      <Integer>1018</Integer>
      </Value>
     </Property>
     <Property>
      <Name>WindowPosX</Name>
      <Value>
-      <Integer>67</Integer>
+      <Integer>0</Integer>
      </Value>
     </Property>
     <Property>
      <Name>WindowPosY</Name>
      <Value>
-      <Integer>27</Integer>
+      <Integer>32</Integer>
      </Value>
     </Property>
     <Property>
      <Name>WindowWidth</Name>
      <Value>
-      <Integer>1853</Integer>
+      <Integer>1920</Integer>
      </Value>
     </Property>
    </PropertyMap>
@@ -281,21 +263,9 @@
      </Value>
     </Property>
     <Property>
-     <Name>GL_MULTISAMPLE</Name>
-     <Value>
-      <Boolean>0</Boolean>
-     </Value>
-    </Property>
-    <Property>
      <Name>GL_NORMALIZE</Name>
      <Value>
       <Boolean>1</Boolean>
-     </Value>
-    </Property>
-    <Property>
-     <Name>GL_NR_SAMPLES</Name>
-     <Value>
-      <Integer>4</Integer>
      </Value>
     </Property>
     <Property>
