@@ -19,7 +19,11 @@ public:
 
     std::map<int, rw::math::Q> q_interpolation(std::vector<rw::math::Q> points, std::vector<double> times);
 
+    std::map<int, rw::math::Q> q_interpolation_nb(std::vector<rw::math::Q> points, std::vector<double> times);
+
     std::map<int, rw::math::Vector3D<double>> xyz_interpolation(std::vector<rw::math::Vector3D<double>> points, std::vector<double> times);
+
+    std::map<int, rw::math::Vector3D<double>> xyz_interpolation_nb(std::vector<rw::math::Vector3D<double>> points, std::vector<double> times);
 
     std::map<int, rw::math::Quaternion<double>> quat_interpolation(std::vector<rw::math::Quaternion<double>> rotations, std::vector<double> times);
 

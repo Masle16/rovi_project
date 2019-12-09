@@ -53,6 +53,7 @@ std::map<int, rw::math::Q> P2P_interpolator::q_interpolation(std::vector<rw::mat
         t = time;
     }
 
+
     double T = 0;
     for (size_t i = 1; i < points.size()-1; i++) {
         T += times[i-1];
@@ -84,6 +85,34 @@ std::map<int, rw::math::Q> P2P_interpolator::q_interpolation(std::vector<rw::mat
         std::cout << it->first << ", " << it->second << std::endl;
     }
     */
+
+    return interpolation;
+}
+
+std::map<int, rw::math::Q> P2P_interpolator::q_interpolation_nb(std::vector<rw::math::Q> points, std::vector<double> times) {
+
+    double time_step = 0.1;
+    double time = 0;
+    double t = 0;
+    int time_index = 0;
+
+    // Linear interpolation between the points:
+    std::map<int, rw::math::Q> interpolation;
+
+    for (size_t j = 0; j < times.size(); j++) {
+
+        // Calculate the number of steps for the next loop.
+        int interval = int(std::round((time+times[j])-time));
+
+        for (int i = 0; i <= interval/time_step; i++) {
+            interpolation.insert(std::pair<int, rw::math::Q>(time_index, points[j]+constant_vel(t, time, time+times[j])*(points[j+1]-points[j])));
+            t += time_step;
+            time_index++;
+        }
+        time_index--;
+        time += times[j];
+        t = time;
+    }
 
     return interpolation;
 }
@@ -147,6 +176,35 @@ std::map<int, rw::math::Vector3D<double>> P2P_interpolator::xyz_interpolation(st
         std::cout << it->first << ", " << it->second << std::endl;
     }
     */
+
+    return interpolation;
+}
+
+std::map<int, rw::math::Vector3D<double>> P2P_interpolator::xyz_interpolation_nb(std::vector<rw::math::Vector3D<double>> points, std::vector<double> times) {
+
+    double time_step = 0.1;
+    double time = 0;
+    double t = 0;
+    int time_index = 0;
+
+    // Linear interpolation between the points:
+    std::map<int, rw::math::Vector3D<double>> interpolation;
+
+    for (size_t j = 0; j < times.size(); j++) {
+
+        // Calculate the number of steps for the next loop.
+        int interval = int(std::round((time+times[j])-time));
+
+        for (int i = 0; i <= interval/time_step; i++) {
+            interpolation.insert(std::pair<int, rw::math::Vector3D<double>>(time_index, points[j]+constant_vel(t, time, time+times[j])*(points[j+1]-points[j])));
+            t += time_step;
+            time_index++;
+        }
+        time_index--;
+        time += times[j];
+        t = time;
+    }
+
 
     return interpolation;
 }
