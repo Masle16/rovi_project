@@ -1,8 +1,9 @@
-#include "SamplePlugin.hpp"
 #include "alignment.hpp"
+#include "SamplePlugin.hpp"
 #include "util.hpp"
 
-#define WC_FILE "/home/mathi/Documents/rovi/rovi_project/simulated_depth_sensor/workcell/Scene.wc.xml"
+//#define WC_FILE "/home/mathi/Documents/rovi/rovi_project/simulated_depth_sensor/workcell/Scene.wc.xml"
+#define WC_FILE "simulated_depth_sensor/workcell/Scene.wc.xml"
 
 SamplePlugin::SamplePlugin():RobWorkStudioPlugin("SamplePluginUI", QIcon(":/pa_icon.png")) {
 	setupUi(this);
@@ -14,11 +15,13 @@ SamplePlugin::SamplePlugin():RobWorkStudioPlugin("SamplePluginUI", QIcon(":/pa_i
     connect(_btn_sds,        SIGNAL(pressed()),         this, SLOT(btnPressed()) );
     connect(_btn_move,       SIGNAL(pressed()),         this, SLOT(btnPressed()) );
     connect(_btn_noise,      SIGNAL(pressed()),         this, SLOT(btnPressed()) );
+    connect(_btn_filter,     SIGNAL(pressed()),         this, SLOT(btnPressed()) );
     connect(_btn_im,         SIGNAL(pressed()),         this, SLOT(btnPressed()) );
     connect(_btn_scan,       SIGNAL(pressed()),         this, SLOT(btnPressed()) );
     connect(_btn0,           SIGNAL(pressed()),         this, SLOT(btnPressed()) );
     connect(_btn1,           SIGNAL(pressed()),         this, SLOT(btnPressed()) );
     connect(_spinBox,        SIGNAL(valueChanged(int)), this, SLOT(btnPressed()) );
+    connect(_btn_normals,    SIGNAL(pressed()),         this, SLOT(btnPressed()) );
 
 	_framegrabber = NULL;
 	
@@ -183,7 +186,13 @@ void SamplePlugin::btnPressed() {
 
                 // move object to pose
                 moveFrame(_wc, _state, "Duck", poses[j]);
+
+                // update robworkstudio state
                 getRobWorkStudio()->setState(_state);
+
+                // get real pose
+                MovFrame *realFrame = _wc->findFrame<MovFrame>("Duck");
+                Pose realPose = realFrame->getTransform(_state);
 
                 // create pcd file
                 get25DImage();
@@ -198,7 +207,7 @@ void SamplePlugin::btnPressed() {
 
                 // calculate error
                 Pose estimatedPose = matrix2Transform(poseMatrix);
-                std::pair<double, double> diffs = calcError(_wc, _state, estimatedPose, poses[j]);
+                std::pair<double, double> diffs = calcError(_wc, _state, estimatedPose, realPose);
 
                 // store data
                 angles.push_back(std::get<0>(diffs));
@@ -238,10 +247,37 @@ void SamplePlugin::btnPressed() {
             poseMatrix = alignment();
         }
 
+        // show the alignment in origin scene
+        {
+            PointCloudT::Ptr _scene(new PointCloudT);
+            PointCloudT::Ptr _object(new PointCloudT);
+
+            pcl::io::loadPCDFile("Scanner25D.pcd", *_scene);
+            spatialFilter(_scene, _scene);
+            voxelGrid(_scene, _scene);
+
+            pcl::io::loadPCDFile(OBJECT_PATH, *_object);
+            voxelGrid(_object, _object, 0.005f);
+            pcl::transformPointCloud(*_object, *_object, poseMatrix);
+
+            pcl::visualization::PCLVisualizer view("After alignment");
+            view.addPointCloud<PointT>(_object, ColorHandlerT(_object, 255, 0 , 0), "Object");
+            view.addPointCloud<PointT>(_scene, ColorHandlerT(_scene, 0, 255, 0), "Scene");
+            view.spin();
+        }
+
         // calculate error
         Pose estimatedPose = matrix2Transform(poseMatrix);
         //std::pair<float, float> diffs = calcError(_wc, _state, estimatedPose, realPose);
         calcError(_wc, _state, estimatedPose, realPose);
+    }
+    else if (obj == _btn_filter) {
+        showFilteringProcess();
+    }
+    else if (obj == _btn_normals) {
+        showSceneNormals(0.1);
+        showSceneNormals(0.01);
+        showSceneNormals(0.001);
     }
 }
 

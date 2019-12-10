@@ -67,6 +67,20 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="_btn_filter">
+        <property name="text">
+         <string>Show filtering process</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="_btn_normals">
+        <property name="text">
+         <string>Show estimated surface normals for scene</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QSpinBox" name="_spinBox"/>
       </item>
       <item>

@@ -94,9 +94,10 @@ std::pair<double, double> calcError(rw::models::WorkCell::Ptr workcell, rw::kine
                   << R(1,1) << " + "
                   << R(2,2) << " = "
                   << traceR << std::endl;
-        diffAngle = acos((traceR-1.0)/2.0);
-        diffAngle *= rw::math::Rad2Deg;
-        std::cout << "\tAngle error: " << diffAngle << std::endl;
+        diffAngle = acos( (traceR-1.0) / 2.0 );
+        std::cout << "\tAngle error: " << diffAngle << " [rad]" << std::endl;
+        diffAngle = diffAngle * rw::math::Rad2Deg;
+        std::cout << "\tAngle error: " << diffAngle << " [deg]" << std::endl;
     }
 
     // difference in position
@@ -171,7 +172,7 @@ void moveFrame(rw::models::WorkCell::Ptr &wc, rw::kinematics::State &state, cons
 std::vector<Pose> loadRandomPoses() {
     std::cout << "Loading random poses.." << std::endl;
     std::vector<Pose> result = {
-        Pose( Vec(-0.145188, 0.443078, 0.13275), Rpy(119.655720, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.145188, 0.443078, 0.13275), Rpy(90.655720, 0, 0).toRotation3D() ),
         Pose( Vec(-0.093862, 0.436711, 0.13275), Rpy(118.604228, 0, 0).toRotation3D() ),
         Pose( Vec(0.122399, 0.495443, 0.13275), Rpy(170.850844, 0, 0).toRotation3D() ),
         Pose( Vec(0.091337, 0.498684, 0.1327), Rpy(290.151910, 0, 0).toRotation3D() ),

@@ -29,7 +29,13 @@ INCLUDE_DIRECTORIES( ${ROBWORK_INCLUDE_DIRS} )
 LINK_DIRECTORIES( ${ROBWORK_LIBRARY_DIRS} )
 
 # Add the source files to build
-SET(SrcFiles main.cpp util.hpp)
+SET(SrcFiles
+    main.cpp
+    util.hpp
+#    mesh.hpp
+#    csv_reader.hpp
+#    pnp_problem.hpp
+)
 
 # The shared library to build:
 ADD_EXECUTABLE(sparse_stereo ${SrcFiles})

@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
             //==========================
             spatialFilter(scene, scene);
             //smoothing(scene, scene);
-            scene = planarSegmentation(scene);
+            planarSegmentation(scene, scene);
             //outlierRemoval(scene, scene, 10.0f, 1.0f);
             voxelGrid(scene, scene, 0.005f);
 //          scene = euclideanCusterExtraction(scene);
@@ -85,19 +85,19 @@ int main(int argc, char** argv) {
     //==============
     // EVALUATING
     //==============
-    std::cout << "\nEvaluating method -->\n" << std::endl;
-    std::vector<float> diffPosition, diffAngle;
-    Mat tablePose = loadTablePose();
-    std::cout << "Table pose inverse -->\n" << tablePose.inverse() << "\n" << std::endl;
-    Mat scannerPose = loadScannerPose();
-    std::cout << "Scanner pose -->\n" << scannerPose << "\n" << std::endl;
-    std::vector<Mat> realPoses = getRealPoses();
-    for (std::size_t i = 0; i < poses.size(); i++) {
-        std::cout << "Real pose -->\n" << realPoses[i] << "\n" << std::endl;
-        Mat estimatedPose = tablePose.inverse() * scannerPose * poses[i];
-        std::cout << "Estimated pose -->\n" << estimatedPose << "\n" << std::endl;
+//    std::cout << "\nEvaluating method -->\n" << std::endl;
+//    std::vector<float> diffPosition, diffAngle;
+//    Mat tablePose = loadTablePose();
+//    std::cout << "Table pose inverse -->\n" << tablePose.inverse() << "\n" << std::endl;
+//    Mat scannerPose = loadScannerPose();
+//    std::cout << "Scanner pose -->\n" << scannerPose << "\n" << std::endl;
+//    std::vector<Mat> realPoses = getRealPoses();
+//    for (std::size_t i = 0; i < poses.size(); i++) {
+//        std::cout << "Real pose -->\n" << realPoses[i] << "\n" << std::endl;
+//        Mat estimatedPose = tablePose.inverse() * scannerPose * poses[i];
+//        std::cout << "Estimated pose -->\n" << estimatedPose << "\n" << std::endl;
 
-    }
+//    }
 
     std::cout << "\nProgram ended\n" << std::endl;
     return 0;
