@@ -1,59 +1,109 @@
 #pragma once
 
-// INCLUDE
+/************************/
+/*      INCLUDES        */
+/************************/
+
 #include <iostream>
 #include <chrono>
 #include <random>
-#include <pcl/io/pcd_io.h>
+
 #include <pcl/point_types.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/filters/convolution_3d.h>
-#include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/surface/mls.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/search/kdtree.h>
-#include <pcl/registration/transformation_estimation_svd.h>
-#include <pcl/registration/transformation_estimation.h>
-#include <pcl/registration/registration.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/features/spin_image.h>
-#include <pcl/common/random.h>
-#include <rw/rw.hpp>
-#include <pcl/ModelCoefficients.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/segmentation/extract_clusters.h>
-#include <pcl/registration/icp.h>
-#include <pcl/registration/correspondence_estimation.h>
-#include <pcl/registration/correspondence_estimation_normal_shooting.h>
-#include <pcl/registration/transformation_estimation_lm.h>
-#include <pcl/registration/correspondence_rejection_one_to_one.h>
-#include <pcl/registration/correspondence_rejection_median_distance.h>
-#include <pcl/registration/correspondence_rejection_sample_consensus.h>
-#include <pcl/registration/correspondence_rejection_trimmed.h>
-#include <pcl/registration/correspondence_rejection_var_trimmed.h>
-#include <pcl/features/normal_3d_omp.h>
-#include <pcl/features/fpfh_omp.h>
-#include <pcl/registration/sample_consensus_prerejective.h>
+
 #include <pcl/common/time.h>
+#include <pcl/common/random.h>
 
-// DEFINES
-#define OBJECT_PATH "/home/mathi/Documents/rovi/rovi_project/point_clouds_of_objects/rubber_duck.pcd"
+#include <pcl/io/pcd_io.h>
 
-// TYPEDEFS
+#include <pcl/visualization/pcl_visualizer.h>
+
+#include <pcl/search/impl/kdtree.hpp>
+#include <pcl/search/impl/flann_search.hpp>
+
+#include <pcl/kdtree/impl/kdtree_flann.hpp>
+
+#include <pcl/filters/impl/voxel_grid.hpp>
+#include <pcl/filters/impl/statistical_outlier_removal.hpp>
+#include <pcl/filters/impl/passthrough.hpp>
+#include <pcl/filters/impl/extract_indices.hpp>
+
+#include <pcl/surface/impl/mls.hpp>
+
+#include <pcl/segmentation/impl/sac_segmentation.hpp>
+#include <pcl/segmentation/impl/extract_clusters.hpp>
+
+#include <pcl/registration/registration.h>
+#include <pcl/registration/transformation_estimation.h>
+#include <pcl/registration/transformation_estimation_svd.h>
+#include <pcl/registration/sample_consensus_prerejective.h>
+
+#include <pcl/features/impl/normal_3d.hpp>
+#include <pcl/features/impl/spin_image.hpp>
+#include <pcl/features/impl/fpfh_omp.hpp>
+#include <pcl/features/impl/normal_3d_omp.hpp>
+
+//#include <pcl/point_types.h>
+//#include <pcl/filters/voxel_grid.h>
+//#include <pcl/filters/statistical_outlier_removal.h>
+//#include <pcl/filters/convolution_3d.h>
+//#include <pcl/kdtree/kdtree_flann.h>
+//#include <pcl/surface/mls.h>
+//#include <pcl/filters/passthrough.h>
+//#include <pcl/visualization/pcl_visualizer.h>
+//#include <pcl/search/kdtree.h>
+//#include <pcl/registration/transformation_estimation_svd.h>
+//#include <pcl/registration/transformation_estimation.h>
+//#include <pcl/registration/registration.h>
+//#include <pcl/features/normal_3d.h>
+//#include <pcl/features/spin_image.h>
+//#include <pcl/common/random.h>
+//#include <pcl/ModelCoefficients.h>
+//#include <pcl/sample_consensus/method_types.h>
+//#include <pcl/sample_consensus/model_types.h>
+//#include <pcl/segmentation/sac_segmentation.h>
+//#include <pcl/filters/extract_indices.h>
+//#include <pcl/segmentation/extract_clusters.h>
+//#include <pcl/registration/icp.h>
+//#include <pcl/registration/correspondence_estimation.h>
+//#include <pcl/registration/correspondence_estimation_normal_shooting.h>
+//#include <pcl/registration/transformation_estimation_lm.h>
+//#include <pcl/registration/correspondence_rejection_one_to_one.h>
+//#include <pcl/registration/correspondence_rejection_median_distance.h>
+//#include <pcl/registration/correspondence_rejection_sample_consensus.h>
+//#include <pcl/registration/correspondence_rejection_trimmed.h>
+//#include <pcl/registration/correspondence_rejection_var_trimmed.h>
+//#include <pcl/features/fpfh.h>
+//#include <pcl/features/normal_3d_omp.h>
+//#include <pcl/features/fpfh_omp.h>
+//#include <pcl/registration/sample_consensus_prerejective.h>
+//#include <pcl/common/time.h>
+
+/************************/
+/*      DEFINES         */
+/************************/
+
+#define OBJECT_PATH "point_clouds_of_objects/rubber_duck.pcd"
+
+/************************/
+/*      TYPEDEF         */
+/************************/
+
 typedef pcl::PointNormal PointT;
 typedef pcl::PointCloud<pcl::PointNormal> PointCloudT;
+
 typedef pcl::Histogram<153> HistT;
+typedef pcl::PointCloud<HistT> HistCloudT;
+typedef pcl::SpinImageEstimation<PointT, PointT, HistT> SpinImgEstimationT;
+
 typedef pcl::FPFHSignature33 FeatureT;
 typedef pcl::PointCloud<FeatureT> FeatureCloudT;
 typedef pcl::FPFHEstimationOMP<PointT, PointT, FeatureT> FeatureEstimationT;
+
 typedef pcl::visualization::PointCloudColorHandlerCustom<PointT> ColorHandlerT;
 
-// FUNCTIONS
+/************************/
+/*      FUNCTIONS       */
+/************************/
 
 /** Performs voxel grid on input
  * Inspiration --> https://github.com/Masle16/pcl/blob/master/tools/voxel_grid.cpp
@@ -567,30 +617,45 @@ Eigen::Matrix4f findLocalAlignment(const PointCloudT::Ptr &scene,
  * @param object
  * @return
  */
-Eigen::Matrix4f computeGlobalPose(const PointCloudT::Ptr &scene,
-                                  const PointCloudT::Ptr &object,
-                                  const float normalEstimationRadiusSearch=0.01,
-                                  const float featureRadiusSearch=0.01,
-                                  const int maxIterations=80000,
-                                  const int numOfSamples2GeneratePose=3,
-                                  const int numOfNearestFeatures=3,
-                                  const float similarityThreshold=0.9f,
-                                  const float inlierThreshold=1.5*0.005f,
-                                  const float inlierFraction=0.25f) {
+Eigen::Matrix4f computeGlobalPose(const PointCloudT::Ptr &scene, const PointCloudT::Ptr &object,
+                                  const float normalEstimationRadiusSearch=0.01, const float featureRadiusSearch=0.01,
+                                  const int maxIterations=80000, const int numOfSamples2GeneratePose=3,
+                                  const int numOfNearestFeatures=3, const float similarityThreshold=0.9f,
+                                  const float inlierThreshold=1.5*0.005f, const float inlierFraction=0.05f) {
     std::cout << "Computing global pose.." << std::endl;
+
     Eigen::Matrix4f result = Eigen::Matrix4f::Identity();
+
     // point clouds
     PointCloudT::Ptr objectAligned(new PointCloudT);
-    FeatureCloudT::Ptr objectFeatures(new FeatureCloudT);
-    FeatureCloudT::Ptr sceneFeatures(new FeatureCloudT);
-    // Estimate normals for scene
+
+    // estimate normals for scene
     std::cout << "\tEstimating scene normals.." << std::endl;
     pcl::NormalEstimationOMP<PointT, PointT> nest;
+//    nest.setKSearch(10);
     nest.setRadiusSearch(normalEstimationRadiusSearch);
+    // compute normals for scene
     nest.setInputCloud(scene);
     nest.compute(*scene);
-    // Estimate features
+
+    // check if normals contains nan
+    std::cout << "\tChecking scene normals for nan.." << std::endl;
+    for (std::size_t i = 0; i < scene->points.size(); i++) {
+        if (!pcl::isFinite<PointT>(scene->points[i])) {
+            std::cerr << "\t\tnormals[" << i << "] is not finite" << std::endl;
+        }
+    }
+    std::cout << "\tChecking object normals for nan.." << std::endl;
+    for (std::size_t i = 0; i < object->points.size(); i++) {
+        if (!pcl::isFinite<PointT>(object->points[i])) {
+            std::cerr << "\t\tnormals[" << i << "] is not finite" << std::endl;
+        }
+    }
+
     std::cout << "\tEstimating features.." << std::endl;
+    // estimate features
+    FeatureCloudT::Ptr objectFeatures(new FeatureCloudT);
+    FeatureCloudT::Ptr sceneFeatures(new FeatureCloudT);
     FeatureEstimationT fest;
     fest.setRadiusSearch(featureRadiusSearch);
     fest.setInputCloud(object);
@@ -599,9 +664,10 @@ Eigen::Matrix4f computeGlobalPose(const PointCloudT::Ptr &scene,
     fest.setInputCloud(scene);
     fest.setInputNormals(scene);
     fest.compute(*sceneFeatures);
+    pcl::SampleConsensusPrerejective<PointT, PointT, FeatureT> align;
+
     // perform alignment
     std::cout << "\tStarting alignment.." << std::endl;
-    pcl::SampleConsensusPrerejective<PointT, PointT, FeatureT> align;
     align.setInputSource(object);
     align.setSourceFeatures(objectFeatures);
     align.setInputTarget(scene);
@@ -616,6 +682,7 @@ Eigen::Matrix4f computeGlobalPose(const PointCloudT::Ptr &scene,
         pcl::ScopeTime t("\tGlobal alignment");
         align.align(*objectAligned);
     }
+
     if (align.hasConverged()) {
         // print results
         result = align.getFinalTransformation();
@@ -634,60 +701,75 @@ Eigen::Matrix4f computeGlobalPose(const PointCloudT::Ptr &scene,
     }
 }
 
-/** Compute Iterative Closest Point
- * Inspiration --> https://github.com/Masle16/pcl/blob/master/tools/iterative_closest_point.cpp
- * @brief computeICP : Computes the ICP from target to source
- * @param target : target point cloud
- * @param source : source point cloud
- * @return : Eigen::Matrix4f transform to get target into source
- */
-Eigen::Matrix4f computeICP(const PointCloudT::Ptr &target,
-                           const PointCloudT::Ptr &source,
-                           const int maxIterations=1000,
-                           const float inlierThresh=0.001f) {
-    PointCloudT::Ptr src = source, tgt = target;
+Eigen::Matrix4f computeGlobalPose2(const PointCloudT::Ptr &scene, const PointCloudT::Ptr &object) {
+    std::cout << "Computing global pose.." << std::endl;
 
-    std::cerr << "\tComputing ICP.." << std::endl;
+    Eigen::Matrix4f result = Eigen::Matrix4f::Identity();
 
-    pcl::registration::TransformationEstimationLM<PointT, PointT, float>::Ptr transEsti(new pcl::registration::TransformationEstimationLM<PointT, PointT, float>);
-    pcl::registration::CorrespondenceEstimation<PointT, PointT, float>::Ptr corEsti(new pcl::registration::CorrespondenceEstimation<PointT, PointT, float>);
-    corEsti->setInputSource(src);
-    corEsti->setInputTarget(tgt);
+    // point clouds
+    PointCloudT::Ptr objectAligned(new PointCloudT);
 
-    pcl::registration::CorrespondenceRejectorOneToOne::Ptr corRejOne2One(new pcl::registration::CorrespondenceRejectorOneToOne);
+    // estimating surface normals
+    std::cout << "\tEstimating surface normals.." << std::endl;
+    pcl::NormalEstimation<PointT, PointT> nest;
+//    nest.setKSearch(10);
+    nest.setRadiusSearch(0.01);
+    // compute for object
+//    nest.setInputCloud(object);
+//    nest.compute(*object);
+    // compute for scene
+    nest.setInputCloud(scene);
+    nest.compute(*scene);
 
-//    pcl::registration::CorrespondenceRejectorMedianDistance::Ptr corRejMed(new pcl::registration::CorrespondenceRejectorMedianDistance);
-//    corRejMed->setInputSource<PointT>(src);
-//    corRejMed->setInputTarget<PointT>(tgt);
+    // estimate spin image descriptors
+    std::cout << "\tEstimating spin images descriptors.." << std::endl;
+    HistCloudT::Ptr objectFeatures(new HistCloudT);
+    HistCloudT::Ptr sceneFeatures(new HistCloudT);
+    SpinImgEstimationT spinEst(8, 0.5, 0);
+    spinEst.setRadiusSearch(0.05);
+    // object
+    spinEst.setInputCloud(object);
+    spinEst.setInputNormals(object);
+    spinEst.compute(*objectFeatures);
+    // scene
+    spinEst.setInputCloud(scene);
+    spinEst.setInputNormals(scene);
+    spinEst.compute(*sceneFeatures);
 
-//    pcl::registration::CorrespondenceRejectorSampleConsensus<PointT>::Ptr corRejSac(new pcl::registration::CorrespondenceRejectorSampleConsensus<PointT>);
-//    corRejSac->setInputSource(src);
-//    corRejSac->setInputTarget(tgt);
-//    corRejSac->setInlierThreshold(0.005);
-//    corRejSac->setMaximumIterations(10000);
+    std::cout << "\tStarting RANSAC.." << std::endl;
+    pcl::SampleConsensusPrerejective<PointT, PointT, HistT> pose;
+    pose.setInputSource(object);
+    pose.setSourceFeatures(objectFeatures);
+    pose.setInputTarget(scene);
+    pose.setTargetFeatures(sceneFeatures);
+    pose.setCorrespondenceRandomness(2);
+    pose.setInlierFraction(0.25f);
+    pose.setNumberOfSamples(3);
+    pose.setSimilarityThreshold(0.9f);
+    pose.setMaxCorrespondenceDistance(0.01f);
+    pose.setMaximumIterations(80000);
+    {
+        pcl::ScopeTime t("Global alignment");
+        pose.align(*objectAligned);
+    }
 
-//    pcl::registration::CorrespondenceRejectorVarTrimmed::Ptr corRejVar(new pcl::registration::CorrespondenceRejectorVarTrimmed);
-//    corRejVar->setInputSource<PointT>(src);
-//    corRejVar->setInputTarget<PointT>(tgt);
-
-//    pcl::registration::CorrespondenceRejectorTrimmed::Ptr corRejTrim(new pcl::registration::CorrespondenceRejectorTrimmed);
-
-    pcl::IterativeClosestPoint<PointT, PointT, float> icp;
-    icp.setCorrespondenceEstimation(corEsti);
-    icp.setTransformationEstimation(transEsti);
-    icp.addCorrespondenceRejector(corRejOne2One);
-//    icp.addCorrespondenceRejector(corRejMed);
-//    icp.addCorrespondenceRejector(corRejSac);
-//    icp.addCorrespondenceRejector(corRejVar);
-//    icp.addCorrespondenceRejector(corRejTrim);
-    icp.setInputSource(src);
-    icp.setInputTarget(tgt);
-    icp.setMaximumIterations(maxIterations);
-    icp.setTransformationEpsilon(inlierThresh);
-    PointCloudT output;
-    icp.align(output);
-    std::cerr << "\t" << icp.getFitnessScore() << std::endl;
-    return icp.getFinalTransformation();
+    if (pose.hasConverged()) {
+        // print results
+        result = pose.getFinalTransformation();
+        std::cout << "\tFinal transformation -->" << std::endl;
+        std::cout << "\t\t"   << result(0,0) << " " << result(0,1) << " " << result(0,2) << "\n"
+                  << "\tR =\t"<< result(1,0) << " " << result(1,1) << " " << result(1,2) << "\n"
+                  << "\t\t"   << result(2,0) << " " << result(2,1) << " " << result(2,2) << std::endl;
+        std::cout << "\tP =\t"<< result(0,3) << " " << result(1,3) << " " << result(2,3) << std::endl;
+        std::cout << "\tInliers: " << pose.getInliers().size() << " / " << object->size() << std::endl;
+        std::cout << "\tFitness score: " << pose.getFitnessScore() << std::endl;
+        return result;
+    }
+    else {
+        // alignment failed
+        std::cout << "\tGlobal alignment failed!" << std::endl;
+        return result;
+    }
 }
 
 /** Returns input cloud with gaussian noise
@@ -777,10 +859,12 @@ Eigen::Matrix4f alignment(const float noise=0.0) {
     Eigen::Matrix4f result;
 
     // load the scene
+    std::cout << "\tLoading input point cloud." << std::endl;
     PointCloudT::Ptr scene(new PointCloudT);
     pcl::io::loadPCDFile("Scanner25D.pcd", *scene);
 
     // load the object
+    std::cout << "\tLoading object point cloud." << std::endl;
     PointCloudT::Ptr object(new PointCloudT);
     pcl::io::loadPCDFile(OBJECT_PATH, *object);
     voxelGrid(object, object, 0.005f);
@@ -829,4 +913,117 @@ Eigen::Matrix4f alignment(const float noise=0.0) {
 //    }
 
     return result;
+}
+
+void showFilteringProcess(const float noise=0.005) {
+    std::cout << "Showing filtering process.." << std::endl;
+
+    std::cout << "\tLoading object for illustration.." << std::endl;
+    // load the object
+    PointCloudT::Ptr object(new PointCloudT);
+    pcl::io::loadPCDFile(OBJECT_PATH, *object);
+    voxelGrid(object, object);
+
+    // get pose
+    std::cout << "\tAligning object in scene for illustration" << std::endl;
+    Eigen::Matrix4f pose = alignment();
+    pcl::transformPointCloud(*object, *object, pose);
+    std::cout << "\tobject pose -->" << std::endl;
+    std::cout << "\t\t"   << pose(0,0) << " " << pose(0,1) << " " << pose(0,2) << "\n"
+              << "\tR =\t"<< pose(1,0) << " " << pose(1,1) << " " << pose(1,2) << "\n"
+              << "\t\t"   << pose(2,0) << " " << pose(2,1) << " " << pose(2,2) << std::endl;
+    std::cout << "\tP =\t"<< pose(0,3) << " " << pose(1,3) << " " << pose(2,3) << std::endl;
+
+    // load the scene
+    PointCloudT::Ptr scene(new PointCloudT);
+    pcl::io::loadPCDFile("Scanner25D.pcd", *scene);
+
+    // add noise
+    std::cout << "\tAdding noise to scene.." << std::endl;
+    scene = addGaussianNoise(scene, noise);
+    {
+        pcl::visualization::PCLVisualizer view("Scene with noise");
+        view.addPointCloud<PointT>(object, ColorHandlerT(object, 255, 0 , 0), "Object");
+        view.addPointCloud<PointT>(scene, ColorHandlerT(scene, 0, 255, 0), "Scene");
+        view.spin();
+    }
+
+    // filtering
+    std::cout << "\tPerforming spatial filtering.." << std::endl;
+    spatialFilter(scene, scene);
+    {
+        pcl::visualization::PCLVisualizer view("After spatial filter");
+        view.addPointCloud<PointT>(object, ColorHandlerT(object, 255, 0 , 0), "Object");
+        view.addPointCloud<PointT>(scene, ColorHandlerT(scene, 0, 255, 0), "Scene");
+        view.spin();
+    }
+
+    std::cout << "\tPerforming voxel grid.." << std::endl;
+    voxelGrid(scene, scene, 0.005f);
+    {
+        pcl::visualization::PCLVisualizer view("After voxel grid");
+        view.addPointCloud<PointT>(object, ColorHandlerT(object, 255, 0 , 0), "Object");
+        view.addPointCloud<PointT>(scene, ColorHandlerT(scene, 0, 255, 0), "Scene");
+        view.spin();
+    }
+
+    std::cout << "\tPerforming smoothing.." << std::endl;
+    smoothing(scene, scene);
+    {
+        pcl::visualization::PCLVisualizer view("After smoothing");
+        view.addPointCloud<PointT>(object, ColorHandlerT(object, 255, 0 , 0), "Object");
+        view.addPointCloud<PointT>(scene, ColorHandlerT(scene, 0, 255, 0), "Scene");
+        view.spin();
+    }
+
+    std::cout << "\tPerforming planar segmentation.." << std::endl;
+    planarSegmentation(scene, scene);
+    {
+        pcl::visualization::PCLVisualizer view("After planar segmentation");
+        view.addPointCloud<PointT>(object, ColorHandlerT(object, 255, 0 , 0), "Object");
+        view.addPointCloud<PointT>(scene, ColorHandlerT(scene, 0, 255, 0), "Scene");
+        view.spin();
+    }
+
+    std::cout << "\tPerforming outlier removal.." << std::endl;
+    outlierRemoval(scene, scene);
+    {
+        pcl::visualization::PCLVisualizer view("After outlier removal");
+        view.addPointCloud<PointT>(object, ColorHandlerT(object, 255, 0 , 0), "Object");
+        view.addPointCloud<PointT>(scene, ColorHandlerT(scene, 0, 255, 0), "Scene");
+        view.spin();
+    }
+
+    std::cout << "\tFiltering ended." << std::endl;
+}
+
+void showSceneNormals(const float radius=0.01) {
+    std::cout << "Showing estimated feature normals for scene with radius: " << radius << std::endl;
+
+    // load the scene
+    std::cout << "\tLoading input point cloud." << std::endl;
+    PointCloudT::Ptr scene(new PointCloudT);
+    pcl::io::loadPCDFile("Scanner25D.pcd", *scene);
+
+    // filter scene
+    spatialFilter(scene, scene);
+    voxelGrid(scene, scene, 0.005f);
+    smoothing(scene, scene);
+    planarSegmentation(scene, scene);
+    outlierRemoval(scene, scene);
+
+    // Estimate normals for scene
+    std::cout << "\tEstimating scene normals.." << std::endl;
+    pcl::NormalEstimationOMP<PointT, PointT> nest;
+    nest.setRadiusSearch(radius);
+    nest.setInputCloud(scene);
+    nest.compute(*scene);
+
+    {
+        pcl::visualization::PCLVisualizer view("Scene with estimated surface normals");
+        view.setBackgroundColor(0,0,0);
+        view.addPointCloud<PointT>(scene, ColorHandlerT(scene, 0, 255, 0), "Scene");
+        view.addPointCloudNormals<PointT, PointT>(scene, scene, 10, 0.05, "Normals");
+        view.spin();
+    }
 }

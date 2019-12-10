@@ -28,7 +28,7 @@
 	<!--insert gripper definition-->
 
 	<Frame name="Tool" refframe="UR-6-85-5-A.TCP">
-		<RPY>0 0 0</RPY> <Pos>0 0 0.072</Pos>
+		<RPY>0 0 0</RPY> <Pos>0 0 0.072</Pos>e
 	</Frame>
 	<Include file="wsg50/wsg50.xml" />
 
@@ -59,10 +59,14 @@
 		<Pos>-0.25 0.474 0.15</Pos>
 =======
 		<RPY> 0 0 180 </RPY>
+<<<<<<< HEAD
 		<!-- <Pos>-0.25 0.474 0.15</Pos> -->
 >>>>>>> be2c119e3d41b5892dec589565b0ea752a163ae4
+=======
+		<Pos>-0.25 0.474 0.15</Pos>
+>>>>>>> bc4803bce4aca187b25a4ffd4ccf114200f7c2d3
 		<!-- <Pos>0.25 0.474 0.15 </Pos> -->
-		<Pos>0.0 0.474 0.15 </Pos>
+		<!-- <Pos>0.0 0.474 0.15 </Pos> -->
 		<!-- <Pos>0.3 -0.5 0.15</Pos> -->
 >>>>>>> 2f1845718460b8aa70a1e042f260dde97a50314f:rrt_connect/workcell/Scene.wc.xml
 		<Drawable name="Cylinder" refframe="Cylinder">

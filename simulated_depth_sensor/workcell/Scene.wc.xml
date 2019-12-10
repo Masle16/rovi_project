@@ -26,7 +26,7 @@
 	</Frame>
 
 	<Frame name="Duck" refframe="Table" type="Movable" daf="true">
-		<RPY>119.655720 0 0</RPY> <Pos>-0.145188 0.443078 0.13275</Pos>
+		<RPY>90.655720 0 0</RPY> <Pos>-0.145188 0.443078 0.13275</Pos>
 		<Drawable name="Duck" refframe="Duck">
 			<Polytope file="parts/rubber_duck" />
 		</Drawable>

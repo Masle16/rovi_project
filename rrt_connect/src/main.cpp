@@ -1,36 +1,49 @@
+/*
+ * INCLUDES
+ */
 #include <iostream>
 #include <fstream>
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
 #include <iomanip>
+#include <map>
+#include <iterator>
+
 #include <rw/rw.hpp>
 #include <rwlibs/pathplanners/rrt/RRTPlanner.hpp>
 #include <rwlibs/pathplanners/rrt/RRTQToQPlanner.hpp>
 #include <rwlibs/proximitystrategies/ProximityStrategyFactory.hpp>
 
-// using namespace std;
-// using namespace rw::common;
-// using namespace rw::math;
-// using namespace rw::kinematics;
-// using namespace rw::loaders;
-// using namespace rw::models;
-// using namespace rw::pathplanning;
-// using namespace rw::proximity;
-// using namespace rw::trajectory;
-// using namespace rwlibs::pathplanners;
-// using namespace rwlibs::proximitystrategies;
-
+/*
+ * DEFINES
+ */
 #define MAXTIME 60.
-//#define ESTEPSIZE 0.005
-#define WC_FILE "../../workcell/Scene.wc.xml"
-#define DEVICE_NAME "UR-6-85-5-A"
 #define MAX_STEP_SIZE 2.0
 #define MAX_ITERATIONS 50
 
-void showUsages() {
-    std::cerr << "-path_to_lua_file" << std::endl;
-    std::cerr << "/path/to/file.lua" << std::endl;
+/*
+ * TYPEDEFS
+ */
+typedef rw::math::Transform3D<> Pose;
+typedef rw::math::Rotation3D<> Rotation;
+typedef rw::math::Vector3D<> Vector;
+typedef rw::math::RPY<> Rpy;
+typedef rw::math::Q Q;
+typedef rw::kinematics::Frame Frame;
+
+/*
+ * GLOBAL VARIABLES
+ */
+const std::string WC_FILE = "../../workcell/Scene.wc.xml";
+const std::string DEVICE_NAME = "UR-6-85-5-A";
+const double VELOCITY = 0.25; // m/s
+
+/*
+ * FUNCTIONS
+ */
+double constant_vel(double t, double t0, double t1) {
+    return (t-t0)/(t1-t0);
 }
 
 std::string convertDoub2Str(const double &input) {
@@ -39,6 +52,20 @@ std::string convertDoub2Str(const double &input) {
     streamObj << std::setprecision(2);
     streamObj << input;
     return streamObj.str();
+}
+
+Pose forwardKinematics(const std::vector<Pose>& tRefs,
+                       const unsigned int idx,
+                       const Q& q) {
+    if (tRefs.size() != q.size()) {
+        std::cerr << "The number of local transformations must be equal to the length of the configuration vector." << std::endl;
+    }
+    Pose baseTi;
+    for (unsigned int i = 0; i < idx; i++) {
+        Pose T(Rpy(q[i], 0, 0).toRotation3D());
+        baseTi = baseTi * tRefs[i] * T;
+    }
+    return baseTi;
 }
 
 /**
@@ -138,6 +165,63 @@ rw::math::Q getQ(rw::models::SerialDevice::Ptr robot,
 
     std::cout << collision_free_solution << std::endl;
     return collision_free_solution;
+}
+
+Q getConfiguration(rw::models::WorkCell::Ptr &workcell, rw::kinematics::State &state, rw::models::SerialDevice::Ptr &device) {
+    std::cout << "Calculating configuration to grasp the object" << std::endl;
+    Q result;
+
+    // create collision detector
+    rw::proximity::CollisionDetector::Ptr detector = rw::common::ownedPtr(
+        new rw::proximity::CollisionDetector(
+            workcell,
+            rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy()
+        )
+    );
+
+    // name of frames
+    const std::string robotName = device->getName();
+    const std::string robotBaseName = robotName + ".Base";
+    const std::string robotTcpName = robotName + ".TCP";
+
+    // find frames
+    Frame *frameGoal = workcell->findFrame("GraspTarget");
+    Frame *frameTcp = workcell->findFrame("GraspTCP");
+    Frame *frameRobotBase = workcell->findFrame(robotBaseName);
+    Frame *frameRobotTcp = workcell->findFrame(robotTcpName);
+
+    // check for existence
+    if (frameGoal == NULL) { std::cerr << "Could not find GraspTarget!" << std::endl; }
+    if (frameTcp == NULL) { std::cerr << "Could not find GraspTCP!" << std::endl; }
+    if (frameRobotBase == NULL) { std::cerr << "Could not find " << robotBaseName << "!" << std::endl; }
+    if (frameRobotTcp == NULL) {std::cerr << "Could not find " << robotTcpName << "!" << std::endl; }
+
+    // make helper transformations
+    Pose base2Goal = rw::kinematics::Kinematics::frameTframe(frameRobotBase, frameGoal, state);
+    Pose tcp2RobotTcp = rw::kinematics::Kinematics::frameTframe(frameTcp, frameRobotTcp, state);
+
+    // get grasp frame in robot tool frame
+    Pose targetAt = base2Goal * tcp2RobotTcp;
+
+    // get configurations for collisions
+    rw::invkin::ClosedFormIKSolverUR::Ptr closedFormSolver = rw::common::ownedPtr(new rw::invkin::ClosedFormIKSolverUR(device, state));
+    std::vector<Q> solutions = closedFormSolver->solve(targetAt, state);
+    std::cout << "\tNumber of collision free solutions --> " << solutions.size() << std::endl;
+
+    // check the configurations for a collision free solution
+    for (std::size_t i = 0; i < solutions.size(); i++) {
+        // set the robot at the configuration
+        device->setQ(solutions[i], state);
+
+        // check if it is in collision
+        if (!detector->inCollision(state, NULL, true)) {
+            result = solutions[i];
+            break; // only need one
+        }
+    }
+
+    std::cout << "\tFound configurations --> " << result << std::endl;
+    return result;
 }
 
 /**
@@ -308,60 +392,244 @@ std::vector<double> calculatePathRRT(const std::string luaPath,
     return result;
 }
 
-int main(int argc, char** argv) {
+rw::trajectory::QPath getRRTPath(const rw::models::WorkCell::Ptr wc, const rw::models::SerialDevice::Ptr device,
+                                 const rw::kinematics::State state, const rw::math::Q from, const rw::math::Q to,
+                                 const double stepSize=0.6) {
+    rw::trajectory::QPath result;
+
+    // set the random seed
+    rw::math::Math::seed();
+
+    rw::proximity::CollisionDetector detector(wc, rwlibs::proximitystrategies::ProximityStrategyFactory::makeDefaultCollisionStrategy());
+    rw::pathplanning::PlannerConstraint constraint = rw::pathplanning::PlannerConstraint::make(&detector, device, state);
+
+    rw::pathplanning::QSampler::Ptr sampler = rw::pathplanning::QSampler::makeConstrained(rw::pathplanning::QSampler::makeUniform(device),
+                                                                                          constraint.getQConstraintPtr());
+    rw::math::QMetric::Ptr metric = rw::math::MetricFactory::makeEuclidean<rw::math::Q>();
+    rw::pathplanning::QToQPlanner::Ptr planner = rwlibs::pathplanners::RRTPlanner::makeQToQPlanner(constraint,
+                                                                                                   sampler,
+                                                                                                   metric,
+                                                                                                   stepSize,
+                                                                                                   rwlibs::pathplanners::RRTPlanner::RRTConnect);
+    // use the planner to find a trajectory between the configurations
+    planner->query(from, to, result);
+    planner->make(constraint);
+
+    return result;
+}
+
+std::vector<Q> getConfigurationsFromPath(rw::trajectory::QPath path) {
+    std::vector<Q> result;
+    for (std::size_t i = 0; i < path.size(); i++) {
+        Q q = path.at(i);
+        result.push_back(q);
+    }
+    return result;
+}
+
+std::map<int, rw::math::Q> q_interpolation_nb(std::vector<rw::math::Q> points, std::vector<double> times) {
+
+    double time_step = 0.1;
+    double time = 0;
+    double t = 0;
+    int time_index = 0;
+
+    // Linear interpolation between the points:
+    std::map<int, Q> interpolation;
+
+    for (size_t j = 0; j < times.size(); j++) {
+
+        // Calculate the number of steps for the next loop.
+        int interval = int(std::round((time+times[j])-time));
+
+        for (int i = 0; i <= interval/time_step; i++) {
+            interpolation.insert(std::pair<int, rw::math::Q>(time_index, points[j]+constant_vel(t, time, time+times[j])*(points[j+1]-points[j])));
+            t += time_step;
+            time_index++;
+        }
+
+        time_index--;
+        time += times[j];
+        t = time;
+    }
+
+    return interpolation;
+}
+
+/*
+ * MAIN ENTRY POINT
+ */
+int main(int argc, char* argv[]) {
     std::cout << "\nProgram started\n" << std::endl;
 
-    std::vector<std::string> paths {
-        "../../cylinder_0.0/",
-        "../../cylinder_0.25/",
-        "../../cylinder_-0.25/"
-    };
-    std::vector<rw::math::Q> froms {
-        rw::math::Q(6, 2.185, -1.795, -1.987, -0.915, 1.571, 0.0),  // cylinder (0.0, 0.474, 0.15)
-        rw::math::Q(6, 1.693, -1.728, -2.068, -0.932, 1.571, 0.0),  // cylinder (0.25, 0.474, 0.15)
-        rw::math::Q(6, 2.5, -2.099, -1.593, -0.991, 1.571, 0.0)     // cylinder (-0.25, 0.474, 0.15)
-    };
-    std::vector<rw::math::Vector3D<>> positions {
-        rw::math::Vector3D<>(0.0, 0.474, 0.15),
-        rw::math::Vector3D<>(0.25, 0.474, 0.15),
-        rw::math::Vector3D<>(-0.25, 0.474, 0.15)
-    };
-    for (unsigned int j = 0; j < paths.size(); j++) {
-        std::cout << "Writing to file: " << paths[j] << std::endl;
-        std::cout << "Using configurations: " << froms[j] << std::endl;
-        std::vector<std::vector<double>> datas;
-        for (double stepSize = 0.05; stepSize < MAX_STEP_SIZE + 0.05; stepSize += 0.05) {
-            std::string luaPath = paths[j] + "path_" + convertDoub2Str(stepSize) + ".lua";
-            std::cout << "Writing to lua file: " << luaPath << std::endl;
-            for (unsigned int i = 0; i < MAX_ITERATIONS; i++) {
-                std::vector<double> result = calculatePathRRT(luaPath, froms[j], positions[j], stepSize);
-                if (result.size() == 0) {
-                    std::cout << "Terminate the program!" << std::endl;
-                    return 0;
+    std::cout << "Input is " << argv[1] << std::endl;
+    const std::string input = argv[1];
+
+    if (input == "analysis") {
+        std::cout << "Starting analysis of RRT-Connect.." << std::endl;
+        std::vector<std::string> paths {
+            "../../cylinder_0.0/",
+            "../../cylinder_0.25/",
+            "../../cylinder_-0.25/"
+        };
+        std::vector<rw::math::Q> froms {
+            rw::math::Q(6, 2.185, -1.795, -1.987, -0.915, 1.571, 0.0),  // cylinder (0.0, 0.474, 0.15)
+            rw::math::Q(6, 1.693, -1.728, -2.068, -0.932, 1.571, 0.0),  // cylinder (0.25, 0.474, 0.15)
+            rw::math::Q(6, 2.5, -2.099, -1.593, -0.991, 1.571, 0.0)     // cylinder (-0.25, 0.474, 0.15)
+        };
+        std::vector<rw::math::Vector3D<>> positions {
+            rw::math::Vector3D<>(0.0, 0.474, 0.15),
+            rw::math::Vector3D<>(0.25, 0.474, 0.15),
+            rw::math::Vector3D<>(-0.25, 0.474, 0.15)
+        };
+        for (unsigned int j = 0; j < paths.size(); j++) {
+            std::cout << "Writing to file: " << paths[j] << std::endl;
+            std::cout << "Using configurations: " << froms[j] << std::endl;
+            std::vector<std::vector<double>> datas;
+            for (double stepSize = 0.05; stepSize < MAX_STEP_SIZE + 0.05; stepSize += 0.05) {
+                std::string luaPath = paths[j] + "path_" + convertDoub2Str(stepSize) + ".lua";
+                std::cout << "Writing to lua file: " << luaPath << std::endl;
+                for (unsigned int i = 0; i < MAX_ITERATIONS; i++) {
+                    std::vector<double> result = calculatePathRRT(luaPath, froms[j], positions[j], stepSize);
+                    if (result.size() == 0) {
+                        std::cout << "Terminate the program!" << std::endl;
+                        return 0;
+                    }
+                    // print info
+                    std::cout << "Step size: " << result[0] << "\t" <<
+                                 "Time: " << result[1] << "\t" <<
+                                 "Distance: " << result[2] << "\t" <<
+                                 "Nodes: " << result[3] << "\t" <<
+                                 "Iteration: " << i+1 << "/" << MAX_ITERATIONS << std::endl;
+                    datas.push_back(result);
                 }
-                // print info
-                std::cout << "Step size: " << result[0] << "\t" <<
-                             "Time: " << result[1] << "\t" <<
-                             "Distance: " << result[2] << "\t" <<
-                             "Nodes: " << result[3] << "\t" <<
-                             "Iteration: " << i+1 << "/" << MAX_ITERATIONS << std::endl;
-                datas.push_back(result);
             }
+
+            // write data to file
+            std::string path = paths[j] + "data.txt";
+            std::cout << "Writing data to file: " << path << std::endl;
+            std::ofstream my_file;
+            my_file.open(path);
+            for (std::vector<double> data : datas) {
+                std::string str = std::to_string(data[0]) + " "
+                                + std::to_string(data[1]) + " "
+                                + std::to_string(data[2]) + " "
+                                + std::to_string(data[3]) + "\n";
+                my_file << str;
+            }
+            my_file.close();
+        }
+    }
+    else if (input == "trajectory") {
+        std::cout << "Creating RRT path with step size 0.6.." << std::endl;
+
+        // load workcell
+        rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(WC_FILE);
+
+        // find the tool frame
+        rw::kinematics::Frame *toolFrame = wc->findFrame("Tool");
+        if (toolFrame == NULL) {
+            std::cerr << "Tool not found!" << std::endl;
+            return -1;
         }
 
-        // write data to file
-        std::string path = paths[j] + "data.txt";
-        std::cout << "Writing data to file: " << path << std::endl;
-        std::ofstream my_file;
-        my_file.open(path);
-        for (std::vector<double> data : datas) {
-            std::string str = std::to_string(data[0]) + " "
-                            + std::to_string(data[1]) + " "
-                            + std::to_string(data[2]) + " "
-                            + std::to_string(data[3]) + "\n";
-            my_file << str;
+        // find cylinder frame
+        rw::kinematics::MovableFrame *cylinderFrame = wc->findFrame<rw::kinematics::MovableFrame>("Cylinder");
+        if (cylinderFrame == NULL) {
+            std::cerr << "Cylinder frame not found!" << std::endl;
+            return -1;
         }
-        my_file.close();
+
+        // find device
+        rw::models::SerialDevice::Ptr device = wc->findDevice<rw::models::SerialDevice>(DEVICE_NAME);
+        if (device == NULL) {
+            std::cerr << "Device: " << DEVICE_NAME << " not found!" << std::endl;
+            return -1;
+        }
+
+        // get tcp frame
+        Frame *tcpFrame = wc->findFrame(DEVICE_NAME + ".TCP");
+        if (tcpFrame == NULL) {
+            std::cerr << "TCP frame not found!" << std::endl;
+            return -1;
+        }
+
+        // get table frame
+        Frame *tableFrame = wc->findFrame("Table");
+        if (tableFrame == NULL) {
+            std::cerr << "Table frame not found!" << std::endl;
+            return -1;
+        }
+
+        // get the default state
+        rw::kinematics::State state = wc->getDefaultState();
+
+        // from and to
+        Q to(6, 1.55, -1.798, -2.007, -0.909, 1.571, 0.0);
+        Q from(6, -1.079, -2.083, -1.555, -1.075, 1.571, 0.0);
+
+        //Set Q to the initial state and grip the bottle frame
+        device->setQ(from, state);
+        rw::kinematics::Kinematics::gripFrame(cylinderFrame, toolFrame, state);
+
+        // calculate rrt path
+        rw::trajectory::QPath path = getRRTPath(wc, device, state, from, to);
+
+        // create linear interpolation between configurations
+        std::vector<Q> qs = getConfigurationsFromPath(path);
+        std::cout << "Number of configurations --> " << qs.size() << std::endl;
+        std::vector<double> times;
+        for (std::size_t i = 0; i < qs.size()-1; i++) {
+            // position 1
+            device->setQ(qs[i],state);
+            Vector pos1 = device->baseTend(state).P();
+            // position 2
+            device->setQ(qs[i+1], state);
+            Vector pos2 = device->baseTend(state).P();
+            // difference
+            rw::math::EuclideanMetric<Vector> metric;
+            double diff = metric.distance(pos1, pos2);
+            double time = std::round(diff / VELOCITY);
+            time = ((int)time == 0) ? 1 : time;
+            std::cout << "\tTime " << i << " --> " << time << std::endl;
+            times.push_back(time);
+        }
+        std::map<int, Q> interpolation = q_interpolation_nb(qs, times);
+        std::cout << "Interpolaton size --> " << interpolation.size() << std::endl;
+
+        // calculate forward kinematic for each configuration
+        std::cout << "\nCalculating forward kinematics.." << std::endl;
+        const std::string dataFile = "../../forward_kinematics.txt";
+        std::ofstream file;
+        file.open(dataFile);
+        rw::trajectory::TimedStatePath statePathQ;
+        for (std::map<int,Q>::iterator i = interpolation.begin(); i != interpolation.end(); i++) {
+            // get info
+            double time = i->first/10.0;
+            Q q = i->second;
+            device->setQ(q, state);
+            Pose baseTtool = device->baseTend(state);
+            Vector pos = baseTtool.P();
+            Rpy rpy = Rpy(baseTtool.R());
+            std::cout << "\nConfiguration " << q << std::endl;
+            std::cout << "Position --> " << baseTtool.P() << std::endl;
+            std::cout << "Rotation --> " << rpy << std::endl;
+            std::cout << "Time --> " << time << std::endl;
+
+            // write to file
+            file << time << " "
+                 << pos(0) << " "
+                 << pos(1) << " "
+                 << pos(2) << " "
+                 << rpy(0) << " "
+                 << rpy(1) << " "
+                 << rpy(2) << "\n";
+
+            // create rwplay file
+            statePathQ.push_back(rw::trajectory::TimedState(time, state));
+        }
+        file.close();
+        rw::loaders::PathLoader::storeTimedStatePath(*wc, statePathQ, "../../trajectory.rwplay");
     }
 
     std::cout << "\nProgram ended\n" << std::endl;

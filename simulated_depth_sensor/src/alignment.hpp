@@ -40,6 +40,7 @@
 #include <pcl/features/fpfh_omp.h>
 #include <pcl/registration/sample_consensus_prerejective.h>
 #include <pcl/common/time.h>
+#include <pcl/kdtree/impl/kdtree_flann.hpp>
 
 // DEFINES
 #define OBJECT_PATH "/home/mathi/Documents/rovi/rovi_project/point_clouds_of_objects/rubber_duck.pcd"
@@ -48,7 +49,9 @@
 typedef pcl::PointNormal PointT;
 typedef pcl::PointCloud<pcl::PointNormal> PointCloudT;
 typedef pcl::Histogram<153> HistT;
+typedef pcl::PointCloud<HistT> HistCloudT;
 typedef pcl::FPFHSignature33 FeatureT;
+typedef pcl::SpinImageEstimation<PointT, PointT, HistT> SpinImgEstimationT;
 typedef pcl::PointCloud<FeatureT> FeatureCloudT;
 typedef pcl::FPFHEstimationOMP<PointT, PointT, FeatureT> FeatureEstimationT;
 typedef pcl::visualization::PointCloudColorHandlerCustom<PointT> ColorHandlerT;
@@ -571,37 +574,75 @@ Eigen::Matrix4f computeGlobalPose(const PointCloudT::Ptr &scene,
                                   const PointCloudT::Ptr &object,
                                   const float normalEstimationRadiusSearch=0.01,
                                   const float featureRadiusSearch=0.01,
-                                  const int maxIterations=75000,
+                                  const int maxIterations=80000,
                                   const int numOfSamples2GeneratePose=3,
-                                  const int numOfNearestFeatures=5,
+                                  const int numOfNearestFeatures=3,
                                   const float similarityThreshold=0.9f,
                                   const float inlierThreshold=0.01,
                                   const float inlierFraction=0.25f) {
     std::cout << "Computing global pose.." << std::endl;
     Eigen::Matrix4f result = Eigen::Matrix4f::Identity();
+
     // point clouds
     PointCloudT::Ptr objectAligned(new PointCloudT);
-    FeatureCloudT::Ptr objectFeatures(new FeatureCloudT);
-    FeatureCloudT::Ptr sceneFeatures(new FeatureCloudT);
-    // Estimate normals for scene
+
+    // estimate normals for scene
     std::cout << "\tEstimating scene normals.." << std::endl;
     pcl::NormalEstimationOMP<PointT, PointT> nest;
-    nest.setRadiusSearch(normalEstimationRadiusSearch);
+    nest.setKSearch(10);
+//    nest.setRadiusSearch(normalEstimationRadiusSearch);
+    // compute normals for object
+    nest.setInputCloud(object);
+    nest.compute(*object);
+    // compute normals for scene
     nest.setInputCloud(scene);
     nest.compute(*scene);
-    // Estimate features
+
+    // check if normals contains nan
+    std::cout << "\tChecking scene normals for nan.." << std::endl;
+    for (std::size_t i = 0; i < scene->points.size(); i++) {
+        if (!pcl::isFinite<PointT>(scene->points[i])) {
+            std::cerr << "\t\tnormals[" << i << "] is not finite" << std::endl;
+        }
+    }
+    std::cout << "\tChecking object normals for nan.." << std::endl;
+    for (std::size_t i = 0; i < object->points.size(); i++) {
+        if (!pcl::isFinite<PointT>(object->points[i])) {
+            std::cerr << "\t\tnormals[" << i << "] is not finite" << std::endl;
+        }
+    }
+
     std::cout << "\tEstimating features.." << std::endl;
-    FeatureEstimationT fest;
-    fest.setRadiusSearch(featureRadiusSearch);
-    fest.setInputCloud(object);
-    fest.setInputNormals(object);
-    fest.compute(*objectFeatures);
-    fest.setInputCloud(scene);
-    fest.setInputNormals(scene);
-    fest.compute(*sceneFeatures);
+//    // estimate features
+//    FeatureCloudT::Ptr objectFeatures(new FeatureCloudT);
+//    FeatureCloudT::Ptr sceneFeatures(new FeatureCloudT);
+//    FeatureEstimationT fest;
+//    fest.setRadiusSearch(featureRadiusSearch);
+//    fest.setInputCloud(object);
+//    fest.setInputNormals(object);
+//    fest.compute(*objectFeatures);
+//    fest.setInputCloud(scene);
+//    fest.setInputNormals(scene);
+//    fest.compute(*sceneFeatures);
+//    pcl::SampleConsensusPrerejective<PointT, PointT, FeatureT> align;
+
+    // spin image features
+    HistCloudT::Ptr objectFeatures(new HistCloudT);
+    HistCloudT::Ptr sceneFeatures(new HistCloudT);
+    SpinImgEstimationT spinEst(8, 0.5, 0);
+    spinEst.setRadiusSearch(0.05); // radius of the support cylinder
+    // spin images for object
+    spinEst.setInputCloud(object);
+    spinEst.setInputNormals(object);
+    spinEst.compute(*objectFeatures);
+    // spin images for scene
+    spinEst.setInputCloud(scene);
+    spinEst.setInputNormals(scene);
+    spinEst.compute(*sceneFeatures);
+    pcl::SampleConsensusPrerejective<PointT, PointT, HistT> align;
+
     // perform alignment
     std::cout << "\tStarting alignment.." << std::endl;
-    pcl::SampleConsensusPrerejective<PointT, PointT, FeatureT> align;
     align.setInputSource(object);
     align.setSourceFeatures(objectFeatures);
     align.setInputTarget(scene);

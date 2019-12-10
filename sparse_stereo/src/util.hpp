@@ -1,8 +1,8 @@
-/***********/
-/* INCLUDE */
-/***********/
 #pragma once
 
+/*
+ * INCLUDES
+ */
 #include <iostream>
 #include <vector>
 #include <array>
@@ -18,23 +18,31 @@
 #include <opencv2/xfeatures2d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-/***********/
-/* DEFINES */
-/***********/
-#define WC_FILE "/home/mathi/Documents/rovi/rovi_project/sparse_stereo/workcell/Scene.wc.xml"
-//#define WC_FILE "../../workcell/Scene.wc.xml"
+/*
+ * DEFINES
+ */
+#define WC_FILE "sparse_stereo/workcell/Scene.wc.xml"
 
-/************/
-/* TYPEDEFS */
-/************/
+/*
+ * TYPEDEFS
+ */
 typedef rw::kinematics::Frame Frame;
+
 typedef rw::math::Transform3D<> Pose;
-typedef rw::kinematics::State State;
+typedef rw::math::Vector3D<> Vec;
+typedef rw::math::Rotation3D<> Rotation;
 typedef rw::math::RPY<> Rpy;
 
-/***********/
-/* STRUCTS */
-/***********/
+typedef rw::kinematics::State State;
+
+/*
+ * GLOBAL VARIABLES
+ */
+const std::string DEVICE_FILE = "UR-6-85-5-A";
+
+/*
+ * STRUCTS
+ */
 struct Camera {
     cv::Mat intrinsic;
     cv::Mat transformation;
@@ -188,7 +196,13 @@ void getProjectionMatrix(const std::string &frameName, cv::Mat &output, cv::Mat 
                       0, fovyPixel, height / 2.0, 0,
                       0, 0, 1, 0;
 
-                cv::eigen2cv(KA, camMat);
+                // create camera matrix
+                camMat = cv::Mat::zeros(3,3,CV_64FC1);
+                camMat.at<double>(0,0) = fovyPixel;
+                camMat.at<double>(1,1) = fovyPixel;
+                camMat.at<double>(0,2) = width/2.0;
+                camMat.at<double>(1,2) = height/2.0;
+                camMat.at<double>(2,2) = 1;
 
                 Pose camPosOGL = cameraFrame->wTf(state);
                 Pose openGL2Vis = Pose(Rpy(-M_PI, 0, M_PI).toRotation3D());
@@ -270,7 +284,250 @@ cv::Mat triangulate2(const cv::Point2f &ptLeft,
     cv::triangulatePoints(projLeft, projRight, cam0pnts, cam1pnts, pnts3D);
     std::cout << "OpenCV triangulation" << std::endl;
     std::cout << "Image points: " << cam0pnts << "\t" << cam1pnts << std::endl << std::endl;
-    std::cout << "Triangulated point (normalized): " << std::endl << pnts3D / pnts3D.at<double>(3, 0) << std::endl << std::endl;
+//    std::cout << "Triangulated point (normalized): " << std::endl << pnts3D / pnts3D.at<double>(3, 0) << std::endl << std::endl;
 
-    return pnts3D / pnts3D.at<double>(3,0);
+    return pnts3D;
+}
+
+/**
+ * @brief stringToInt : converts a given string to an integer
+ * @param text
+ * @return
+ */
+int string2Int( const std::string &text) {
+    std::istringstream ss(text);
+    int result;
+    return ss >> result ? result : 0;
+}
+
+/**
+ * @brief float2string : converts a given float to a string
+ * @param number
+ * @return
+ */
+std::string float2String(float num) {
+    std::ostringstream ss;
+    ss << num;
+    return ss.str();
+}
+
+std::string int2String(int num) {
+    std::ostringstream ss;
+    ss << num;
+    return ss.str();
+}
+
+int ratioTest(std::vector<std::vector<cv::DMatch>> &matches, const float ratio=0.7f) {
+    int removed = 0;
+
+    // for all matches
+    for (std::vector<std::vector<cv::DMatch>>::iterator matchIterator = matches.begin();
+         matchIterator != matches.end(); matchIterator++) {
+
+        // if 2 NN has been identified
+        if (matchIterator->size() > 1) {
+            // check distance ratio
+            if ((*matchIterator)[0].distance / (*matchIterator)[1].distance > ratio) {
+                matchIterator->clear();
+                removed++;
+            }
+        }
+        else {
+            // does not have 2 neighbours
+            matchIterator->clear();
+            removed++;
+        }
+    }
+    return removed;
+}
+
+void symmetryTest(const std::vector<std::vector<cv::DMatch>> &matches1,
+                  const std::vector<std::vector<cv::DMatch>> &matches2,
+                  std::vector<cv::DMatch> &symMatches) {
+    // for all matches image 1 --> image 2
+    for (std::vector<std::vector<cv::DMatch>>::const_iterator matchIterator1 = matches1.begin();
+         matchIterator1 != matches1.end();
+         matchIterator1++) {
+
+        // ignore deleted matches
+        if (matchIterator1->empty() || matchIterator1->size() < 2) { continue; }
+
+        // for all matches image 2 --> image 1
+        for (std::vector<std::vector<cv::DMatch>>::const_iterator matchIterator2 = matches2.begin();
+             matchIterator2 != matches2.end();
+             matchIterator2++) {
+
+            // ignore deleted matches
+            if (matchIterator2->empty() || matchIterator2->size() < 2) { continue; }
+
+            // match symmetry test
+            if ((*matchIterator1)[0].queryIdx == (*matchIterator2)[0].trainIdx &&
+                    (*matchIterator2)[0].queryIdx == (*matchIterator1)[0].trainIdx) {
+
+                // add symmetry match
+                symMatches.push_back(
+                    cv::DMatch(
+                        (*matchIterator1)[0].queryIdx,
+                        (*matchIterator1)[0].trainIdx,
+                        (*matchIterator1)[0].distance
+                    )
+                );
+            }
+        }
+    }
+}
+
+cv::Mat setPMat(const cv::Mat &rMat, const cv::Mat &tMat) {
+    cv::Mat pMat = cv::Mat::zeros(4,4,CV_64FC1);
+
+    // Rotation-Translation Matrix Definition
+    pMat.at<double>(0,0) = rMat.at<double>(0,0);
+    pMat.at<double>(0,1) = rMat.at<double>(0,1);
+    pMat.at<double>(0,2) = rMat.at<double>(0,2);
+    pMat.at<double>(1,0) = rMat.at<double>(1,0);
+    pMat.at<double>(1,1) = rMat.at<double>(1,1);
+    pMat.at<double>(1,2) = rMat.at<double>(1,2);
+    pMat.at<double>(2,0) = rMat.at<double>(2,0);
+    pMat.at<double>(2,1) = rMat.at<double>(2,1);
+    pMat.at<double>(2,2) = rMat.at<double>(2,2);
+    pMat.at<double>(0,3) = tMat.at<double>(0);
+    pMat.at<double>(1,3) = tMat.at<double>(1);
+    pMat.at<double>(2,3) = tMat.at<double>(2);
+
+    pMat.at<double>(3,0) = 0;
+    pMat.at<double>(3,1) = 0;
+    pMat.at<double>(3,2) = 0;
+    pMat.at<double>(3,3) = 1;
+
+    return pMat;
+}
+
+/**
+ * --> https://www.euclideanspace.com/maths/geometry/rotations/conversions/eulerToMatrix/index.htm
+ * @brief euler2rot
+ * @param euler
+ * @return
+ */
+cv::Mat euler2rot(const cv::Mat &euler) {
+    cv::Mat rotm(3,3,CV_64F);
+
+    double bank = euler.at<double>(0);
+    double attitude = euler.at<double>(1);
+    double heading = euler.at<double>(2);
+
+    double ch = cos(heading), sh = sin(heading);
+    double ca = cos(attitude), sa = sin(attitude);
+    double cb = cos(bank), sb = sin(bank);
+
+    rotm.at<double>(0,0) = ch*ca;
+    rotm.at<double>(0,1) = sh*sb-ch*sa*cb;
+    rotm.at<double>(0,2) = ch*sa*sb+sh*cb;
+    rotm.at<double>(1,0) = sa;
+    rotm.at<double>(1,1) = ca*cb;
+    rotm.at<double>(1,2) = -ca*sb;
+    rotm.at<double>(2,0) = -sh*ca;
+    rotm.at<double>(2,1) = sh*sa*cb+ch*sb;
+    rotm.at<double>(2,2) = -sh*sa*sb+ch*cb;
+
+    return rotm;
+}
+
+void get3dPnts(const cv::Mat &proj_l, const cv::Mat &proj_r, std::vector<cv::Point3d> &pnts_3d) {
+    // get optical center
+    std::array<cv::Mat, 2> pp_l = splitPp(proj_l);
+    std::array<cv::Mat, 2> pp_r = splitPp(proj_r);
+    cv::Mat c_l = computeOpticalCenter(pp_l);
+    cv::Mat c_r = computeOpticalCenter(pp_r);
+    std::cout << "\nOptical center left:\n" << c_l
+              << "\nOptical center Right:\n" << c_r << std::endl;
+
+    // get epipole
+    cv::Mat epi_l = proj_l * c_r;
+    cv::Mat epi_r = proj_r * c_l;
+    std::cout << "\nLeft epipole:\n" << epi_l
+              << "\nRight epipole:\n" << epi_r << std::endl;
+
+    // get fundamental matrix left to right
+    cv::Mat f_l2r = computeFundamentalMat(epi_r, proj_r, proj_l);
+    std::cout << "\nFundamental matrix left to right:\n" << f_l2r << std::endl;
+
+    // load images
+    cv::Mat src_l = cv::imread("../../Camera_Left.png", cv::IMREAD_COLOR);
+    cv::Mat src_r = cv::imread("../../Camera_Right.png", cv::IMREAD_COLOR);
+
+    // find matches
+    std::vector<cv::Point2f> l2r, r2l;
+    findMatches(src_l, src_r, l2r, r2l);
+
+    // triangulate
+    for (std::size_t i = 0; i < l2r.size(); i++) {
+        cv::Point2f pnt_l = l2r[i];
+        cv::Point2f pnt_r = r2l[i];
+//        cv::Mat pnt3D = triangulate(pntLeft, pntRight, fundamentalLeftRight, centerLeft, centerRight, ppLeft, ppRight);
+        cv::Mat pnt3D = triangulate2(pnt_l, pnt_r, proj_l, proj_r);
+        pnts_3d.push_back(mat2Point3f(pnt3D));
+    }
+}
+
+void getPose(Pose &pose) {
+    Frame *duckFrame = wc->findFrame("Duck");
+    if (duckFrame == NULL) {
+        std::cerr << "Duck frame not found!" << std::endl;
+        return;
+    }
+    pose = duckFrame->getTransform(state);
+}
+
+void getCamerasInfo(cv::Mat &proj_l, cv::Mat &proj_r, cv::Mat &cam_mat_l, cv::Mat &cam_mat_r) {
+    std::cout << "Left camera.." << std::endl;
+    getProjectionMatrix("Camera_Left", proj_l, cam_mat_l);
+    std::cout << "\nLeft camera projection matrix -->\n" << proj_l << std::endl;
+    std::cout << "\nLeft camera matrix -->\n" << cam_mat_l << std::endl;
+
+    std::cout << "Right camera.." << std::endl;
+    getProjectionMatrix("Camera_Right", proj_r, cam_mat_r);
+    std::cout << "\nRight camera projection matrix -->\n" << proj_r << std::endl;
+    std::cout << "\nRight camera matrix -->\n" << cam_mat_r << std::endl;
+}
+
+void findMatches(cv::Mat &src_l, cv::Mat &src_r, std::vector<cv::Point2f> &l2r, std::vector<cv::Point2f> &r2l) {
+    // filter images
+    cv::Mat _src_l = colorFiltering(src_l);
+    cv::Mat _src_r = colorFiltering(src_r);
+
+    // step 1: detect the keypoints using surf detector, compute the descriptors
+    int minHessian = 400;
+    cv::Ptr<cv::xfeatures2d::SURF> detector = cv::xfeatures2d::SURF::create(minHessian);
+    std::vector<cv::KeyPoint> keypoints1, keypoints2;
+    cv::Mat descriptor1, descriptor2;
+    detector->detectAndCompute(_src_l, cv::noArray(), keypoints1, descriptor1);
+    detector->detectAndCompute(_src_r, cv::noArray(), keypoints2, descriptor2);
+
+    // step 2: matching descriptor vectors with a brute force matcher
+    // since surf is floating-point descriptor NORM_L2 is used
+    cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
+    std::vector<std::vector<cv::DMatch>> matches1, matches2;
+
+    // image 1 --> 2
+    matcher->knnMatch(descriptor1, descriptor2, matches1, 2);
+    // image 2 --> 1
+    matcher->knnMatch(descriptor2, descriptor1, matches2, 2);
+
+    // remove matches for which NN ratio is > than threshold
+    std::cout << "Clean image 1 --> image 2 matches: " << ratioTest(matches1) << " (removed)."
+              << "\nClean image 2 --> image 1 matches: " << ratioTest(matches2) << " (removed)."
+              << std::endl;
+
+    // remove non-symmetrical matches
+    std::vector<cv::DMatch> goodMatches;
+    symmetryTest(matches1, matches2, goodMatches);
+
+    // get point
+    std::vector<cv::Point2f> l2r, r2l;
+    for (std::size_t i = 0; i < goodMatches.size(); i++) {
+        int idx1 = goodMatches[i].trainIdx;
+        int idx2 = goodMatches[i].queryIdx;
+        l2r.push_back(keypoints1[idx1].pt);
+        r2l.push_back(keypoints2[idx2].pt);
+    }
 }
