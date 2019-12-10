@@ -490,8 +490,8 @@ void getInitial3dPnts(const cv::Mat &proj_l, const cv::Mat &proj_r, std::vector<
 
     // triangulate
     for (std::size_t i = 0; i < l2r.size(); i++) {
-//        cv::Mat pnt3D = triangulate(pntLeft, pntRight, fundamentalLeftRight, centerLeft, centerRight, ppLeft, ppRight);
-        cv::Mat pnt3D = triangulate2(l2r[i], r2l[i], proj_l, proj_r);
+        cv::Mat pnt3D = triangulate(l2r[i], r2l[i], f_l2r, c_l, c_r, pp_l, pp_r);
+//        cv::Mat pnt3D = triangulate2(l2r[i], r2l[i], proj_l, proj_r);
         pnts_3d.push_back(pnt3D);
 
         std::cout << "\n3D point -->\n" << pnts_3d[i] << std::endl;
@@ -527,8 +527,8 @@ void getNew3dPnts(const cv::Mat &proj_l, const cv::Mat &proj_r, std::vector<cv::
 
     // triangulate
     for (std::size_t i = 0; i < l2r.size(); i++) {
-//        cv::Mat pnt3D = triangulate(pntLeft, pntRight, fundamentalLeftRight, centerLeft, centerRight, ppLeft, ppRight);
-        cv::Mat pnt3D = triangulate2(l2r[i], r2l[i], proj_l, proj_r);
+        cv::Mat pnt3D = triangulate(l2r[i], r2l[i], f_l2r, c_l, c_r, pp_l, pp_r);
+//        cv::Mat pnt3D = triangulate2(l2r[i], r2l[i], proj_l, proj_r);
         pnts_3d.push_back(pnt3D);
 
         std::cout << "\n3D point -->\n" << pnts_3d[i] << std::endl;
