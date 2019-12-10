@@ -259,7 +259,7 @@ rw::math::Quaternion<double> P2P_interpolator::quat_int(rw::math::Quaternion<dou
     return (std::sin((1-T)*angle))/(std::sin(angle))*q1 + (std::sin(T*angle))/(std::sin(angle))*q2;
 }
 
-rw::trajectory::TimedStatePath P2P_interpolator::inverse_kin(rw::models::SerialDevice::Ptr robot, rw::kinematics::State init_state, rw::math::Q init_joint_config, std::map<int, rw::math::Vector3D<double>> xyz, std::map<int, rw::math::Quaternion<double>> quat) {
+rw::trajectory::TimedStatePath P2P_interpolator::inverse_kin(rw::models::SerialDevice::Ptr robot, rw::kinematics::State init_state, rw::math::Q init_joint_config, std::map<int, rw::math::Vector3D<double>> xyz, std::map<int, rw::math::Quaternion<double>> quat, rw::kinematics::Frame *frame_tcp) {
 
     file_output.open(toolSpace_filename);
     rw::math::Transform3D<double> FK;
@@ -267,7 +267,6 @@ rw::trajectory::TimedStatePath P2P_interpolator::inverse_kin(rw::models::SerialD
     rw::trajectory::TimedStatePath output_path;
     rw::kinematics::State state = init_state;
     rw::invkin::ClosedFormIKSolverUR::Ptr ikSolver = rw::common::ownedPtr(new rw::invkin::ClosedFormIKSolverUR(robot, state));
-
 
     rw::math::Q last_best = init_joint_config;
     for (int i = 0; i < int(xyz.size()); i++) {
@@ -295,7 +294,7 @@ rw::trajectory::TimedStatePath P2P_interpolator::inverse_kin(rw::models::SerialD
         robot->setQ(ik_result[best_result], state);
         output_path.push_back(rw::trajectory::TimedState(double(xyz.find(i)->first)/10., state));
 
-        std::cout << robot->baseTend(state) << std::endl;
+        std::cout << robot->baseTframe(frame_tcp, state) << std::endl;
         FK = robot->baseTend(state);
         file_output << double(xyz.find(i)->first)/10. << "," << FK.P()[0] << "," << FK.P()[1] << "," << FK.P()[2] <<
                        "," << FK.R().getRow(0)[0] << "," << FK.R().getRow(0)[1] << "," << FK.R().getRow(0)[2] <<

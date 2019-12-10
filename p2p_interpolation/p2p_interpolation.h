@@ -29,7 +29,7 @@ public:
 
     rw::math::Quaternion<double> quat_int(rw::math::Quaternion<double> q1, rw::math::Quaternion<double> q2, double T);
 
-    rw::trajectory::TimedStatePath inverse_kin(rw::models::SerialDevice::Ptr robot, rw::kinematics::State init_state, rw::math::Q init_joint_config, std::map<int, rw::math::Vector3D<double>> xyz, std::map<int, rw::math::Quaternion<double>> quat);
+    rw::trajectory::TimedStatePath inverse_kin(rw::models::SerialDevice::Ptr robot, rw::kinematics::State init_state, rw::math::Q init_joint_config, std::map<int, rw::math::Vector3D<double>> xyz, std::map<int, rw::math::Quaternion<double>> quat, rw::kinematics::Frame *frame_tcp);
 
 
 private:
