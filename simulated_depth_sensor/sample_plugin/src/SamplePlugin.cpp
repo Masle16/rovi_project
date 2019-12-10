@@ -275,9 +275,9 @@ void SamplePlugin::btnPressed() {
         showFilteringProcess();
     }
     else if (obj == _btn_normals) {
-        showSceneNormals(0.1);
+        showSceneNormals(0.05);
         showSceneNormals(0.01);
-        showSceneNormals(0.001);
+        showSceneNormals(0.005);
     }
 }
 

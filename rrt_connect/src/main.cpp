@@ -610,20 +610,18 @@ int main(int argc, char* argv[]) {
             device->setQ(q, state);
             Pose baseTtool = device->baseTend(state);
             Vector pos = baseTtool.P();
-            Rpy rpy = Rpy(baseTtool.R());
+            Rotation rot = baseTtool.R();
             std::cout << "\nConfiguration " << q << std::endl;
-            std::cout << "Position --> " << baseTtool.P() << std::endl;
-            std::cout << "Rotation --> " << rpy << std::endl;
+            std::cout << "Position --> " << pos << std::endl;
+            std::cout << "Rotation --> " << rot << std::endl;
             std::cout << "Time --> " << time << std::endl;
 
             // write to file
             file << time << " "
-                 << pos(0) << " "
-                 << pos(1) << " "
-                 << pos(2) << " "
-                 << rpy(0) << " "
-                 << rpy(1) << " "
-                 << rpy(2) << "\n";
+                 << pos(0) << " " << pos(1) << " " << pos(2) << " "
+                 << rot.getRow(0)[0] << " " << rot.getRow(0)[1] << " " << rot.getRow(0)[2] << " "
+                 << rot.getRow(1)[0] << " " << rot.getRow(1)[1] << " " << rot.getRow(1)[2] << " "
+                 << rot.getRow(2)[0] << " " << rot.getRow(2)[1] << " " << rot.getRow(2)[2] << "\n";
 
             // create rwplay file
             statePathQ.push_back(rw::trajectory::TimedState(time, state));

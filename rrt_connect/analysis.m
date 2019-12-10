@@ -117,30 +117,64 @@ clc; clear;
 
 % load data
 data = load('forward_kinematics.txt');
-time = data(:,1);
-x = data(:,2);
-y = data(:,3);
-z = data(:,4);
-roll = data(:,5);
-pitch = data(:,6);
-yaw = data(:,7);
+[time, xyz, eul] = split_data(data);
+eul = avoid_singularities(eul);
 
 figure('Name', 'X, y and z.')
-plot(time,x)
+plot(time, xyz(:,1))
 hold on
-plot(time,y)
-plot(time,z)
+plot(time, xyz(:,2))
+plot(time, xyz(:,3))
 ylabel('Position [m]')
 xlabel('Time [s]')
 legend('x', 'y', 'z')
 hold off
 
 figure('name', 'Roll, pitch and yaw.')
-plot(time,roll)
+plot(time, eul(:,1))
 hold on
-plot(time,pitch)
-plot(time,yaw)
-ylabel('Angle [rad]')
+plot(time, eul(:,2))
+plot(time, eul(:,3))
+ylabel('Orientation [rad]')
 xlabel('Time [s]')
 legend('Roll', 'Pitch', 'Yaw')
 hold off
+
+%% velocity plot
+plot(time(1:end-1), abs(diff(xyz(:,1))./1))
+
+% function
+function [t, xyz, eul] = split_data(input)
+t = input(:,1);
+xyz = input(:,2:4);
+
+rows1 = input(:,5:7);
+rows2 = input(:,8:10);
+rows3 = input(:,11:13);
+
+rot_vec = reshape([rows1(:) rows2(:) rows3(:)]', [], 3);
+rot_matrices = reshape(rot_vec', 3, 3, []);
+rot = permute(rot_matrices, [2 1 3]);
+
+eul = rotm2eul(rot);
+end
+
+function eul = avoid_singularities(input)
+    for i = 1:(length(input)-1)
+        
+        % yaw
+        cur_yaw = input(i,3);
+        next_yaw = input(i+1,3);
+        if sign(cur_yaw) ~= sign(next_yaw)
+            diff = abs(cur_yaw - next_yaw);
+            if diff > 1
+                if sign(cur_yaw) == -1
+                    input(i,3) = (2*pi) + cur_roll;
+                elseif sign(next_yaw) == -1
+                    input(i+1,3) = (2*pi) + next_yaw;
+                end
+            end
+        end
+    end
+    eul = input;
+end
