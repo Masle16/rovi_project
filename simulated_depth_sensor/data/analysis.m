@@ -128,3 +128,13 @@ boxplot(positions, noise)
 title('Noise as a function of position difference.')
 ylabel('Position difference[m].')
 xlabel('Standard deviation of normal distribution.')
+
+%% Descriptive statistics
+times_mu = mean(times(1:180,:))
+times_std = std(times(1:180,:))
+
+angles_mu = mean(angles(1:180,:))
+angles_std = std(angles(1:180,:))
+
+positions_mu = mean(positions(1:180,:))
+positions_std = std(positions(1:180,:))

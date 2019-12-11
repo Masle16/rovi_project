@@ -36,6 +36,7 @@
 #include <pcl/registration/transformation_estimation.h>
 #include <pcl/registration/transformation_estimation_svd.h>
 #include <pcl/registration/sample_consensus_prerejective.h>
+#include <pcl/registration/icp.h>
 
 #include <pcl/features/impl/normal_3d.hpp>
 #include <pcl/features/impl/spin_image.hpp>
@@ -619,8 +620,8 @@ Eigen::Matrix4f findLocalAlignment(const PointCloudT::Ptr &scene,
  */
 Eigen::Matrix4f computeGlobalPose(const PointCloudT::Ptr &scene, const PointCloudT::Ptr &object,
                                   const float normalEstimationRadiusSearch=0.01, const float featureRadiusSearch=0.01,
-                                  const int maxIterations=80000, const int numOfSamples2GeneratePose=3,
-                                  const int numOfNearestFeatures=3, const float similarityThreshold=0.9f,
+                                  const int maxIterations=40000, const int numOfSamples2GeneratePose=3,
+                                  const int numOfNearestFeatures=3, const float similarityThreshold=0.6f,
                                   const float inlierThreshold=1.5*0.005f, const float inlierFraction=0.05f) {
     std::cout << "Computing global pose.." << std::endl;
 
@@ -772,6 +773,44 @@ Eigen::Matrix4f computeGlobalPose2(const PointCloudT::Ptr &scene, const PointClo
     }
 }
 
+/**
+ * Inspiraion --> http://pointclouds.org/documentation/tutorials/iterative_closest_point.php
+ * @brief computeICP
+ * @param scene
+ * @param object
+ * @return
+ */
+Eigen::Matrix4f computeICP(const PointCloudT::Ptr &scene, const PointCloudT::Ptr &object) {
+    std::cout << "\nComputing ICP.." << std::endl;
+
+    Eigen::Matrix4f result = Eigen::Matrix4f::Identity();
+
+    // new object to align
+    PointCloudT::Ptr obejctAligned(new PointCloudT);
+
+    // ICP object
+    pcl::IterativeClosestPoint<PointT, PointT> icp;
+    icp.setInputSource(object);
+    icp.setInputTarget(scene);
+    icp.setMaximumIterations(2000);
+    icp.setMaxCorrespondenceDistance(0.005);
+
+    {
+        pcl::ScopeTime t("ICP");
+        icp.align(*obejctAligned);
+    }
+
+    if (icp.hasConverged()) {
+        result = icp.getFinalTransformation();
+        std::cout << "\nICP converged."
+                  << "\nThe score is --> " << icp.getFitnessScore()
+                  << "\nThe transformation matrix is -->\n" << result << std::endl;
+    }
+    else { std::cout << "ICP did not converge." << std::endl; }
+
+    return result;
+}
+
 /** Returns input cloud with gaussian noise
  * From: https://github.com/Masle16/pcl/blob/master/tools/add_gaussian_noise.cpp
  * @brief addGaussianNoise : copies input cloud and applies gaussian noise to new cloud
@@ -855,6 +894,11 @@ void saveSceneWithObject(const std::string &fileName, const Eigen::Matrix4f &pos
     pcl::io::savePCDFile(fileName, *result);
 }
 
+/**
+ * @brief alignment
+ * @param noise
+ * @return
+ */
 Eigen::Matrix4f alignment(const float noise=0.0) {
     Eigen::Matrix4f result;
 
@@ -915,6 +959,10 @@ Eigen::Matrix4f alignment(const float noise=0.0) {
     return result;
 }
 
+/**
+ * @brief showFilteringProcess
+ * @param noise
+ */
 void showFilteringProcess(const float noise=0.005) {
     std::cout << "Showing filtering process.." << std::endl;
 
@@ -997,6 +1045,10 @@ void showFilteringProcess(const float noise=0.005) {
     std::cout << "\tFiltering ended." << std::endl;
 }
 
+/**
+ * @brief showSceneNormals
+ * @param radius
+ */
 void showSceneNormals(const float radius=0.01) {
     std::cout << "Showing estimated feature normals for scene with radius: " << radius << std::endl;
 
