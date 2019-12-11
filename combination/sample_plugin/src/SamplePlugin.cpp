@@ -219,24 +219,45 @@ void SamplePlugin::btnPressed() {
         estimatedPose = calcError(_wc, _state, estimatedPose, realPose);
 
         // get configurations for device grasp of object
-        _objQ = getConfiguration(estimatedPose);
+        _objQ = getGraspQ(estimatedPose);
+        getAboveGraspQ(estimatedPose);
 
         getRobWorkStudio()->setState(_state);
     }
     else if (obj == _btn_obj) {
         std::cout << "\nMove robot tcp to object.." << std::endl;
 
-        // calc path rrt
-        std::cout << "\nCalculating path.." << std::endl;
         _timer->stop();
-        rw::math::Math::seed();
-        double extend = 0.6;
-        double maxTime = 60;
-        createPathRRTConnect(_homeQ, _objQ, extend, maxTime);
+        std::vector<Q> qs;
 
-        std::cout << "\nPath length --> " << _path.size() << std::endl;
-        for (std::size_t i = 0; i < _path.size(); i++)
-            std::cout << "Configuration " << i << " --> " << _path[i] << std::endl;
+//        // calc path rrt
+//        std::cout << "\nCalculating path.." << std::endl;
+//        rw::math::Math::seed();
+//        double extend = 0.6;
+//        double maxTime = 60;
+//        createPathRRTConnect(_homeQ, _objQ, extend, maxTime);
+//        std::cout << "\nPath length --> " << _path.size() << std::endl;
+//        for (std::size_t i = 0; i < _path.size(); i++) {
+//            qs.push_back(_path[i]);
+//            std::cout << "Configuration " << i << " --> " << qs[i] << std::endl;
+//        }
+
+        qs = parabolicBlendHome2Object(_homeQ, _objQ);
+
+        // get time between configuration
+        std::vector<double> times = getTimeBetweenQs(qs);
+
+        // creating interpolation with
+        std::map<int, Q> interpolation = q_interpolation(qs, times);
+
+        // update _path
+        _path.clear();
+        std::map<int,Q>::iterator it;
+        for (it = interpolation.begin(); it != interpolation.end(); it++) {
+            Q q = it->second;
+            _path.push_back(q);
+            std::cout << "\nPath configuration --> " << q << std::endl;
+        }
 
         // run path
         std::cout << "Showing path.." << std::endl;
@@ -263,17 +284,37 @@ void SamplePlugin::btnPressed() {
         rw::kinematics::Kinematics::gripFrame(duckFrame, toolFrame, _state);
         getRobWorkStudio()->setState(_state);
 
-        // calc path rrt
-        std::cout << "\nCalculating path.." << std::endl;
         _timer->stop();
-        rw::math::Math::seed();
-        double extend = 0.6;
-        double maxTime = 60;
-        createPathRRTConnect(_objQ, _goalQ, extend, maxTime);
+        std::vector<Q> qs;
 
-        std::cout << "\nPath length --> " << _path.size() << std::endl;
-        for (std::size_t i = 0; i < _path.size(); i++)
-            std::cout << "Configuration " << i << " --> " << _path[i] << std::endl;
+//        // calc path rrt
+//        std::cout << "\nCalculating path.." << std::endl;
+//        rw::math::Math::seed();
+//        double extend = 0.6;
+//        double maxTime = 60;
+//        createPathRRTConnect(_objQ, _goalQ, extend, maxTime);
+//        std::cout << "\nPath length --> " << _path.size() << std::endl;
+//        for (std::size_t i = 0; i < _path.size(); i++) {
+//            qs.push_back(_path[i]);
+//            std::cout << "Configuration " << i << " --> " << qs[i] << std::endl;
+//        }
+
+        qs = parabolicBlendObject2Goal(_objQ, _goalQ);
+
+        // get time between configuration
+        std::vector<double> times = getTimeBetweenQs(qs);
+
+        // creating interpolation with
+        std::map<int, Q> interpolation = q_interpolation(qs, times);
+
+        // update _path
+        _path.clear();
+        std::map<int,Q>::iterator it;
+        for (it = interpolation.begin(); it != interpolation.end(); it++) {
+            Q q = it->second;
+            _path.push_back(q);
+            std::cout << "\nPath configuration --> " << q << std::endl;
+        }
 
         // run path
         std::cout << "Showing path.." << std::endl;
@@ -285,6 +326,10 @@ void SamplePlugin::btnPressed() {
         }
         else
             _step = 0;
+    }
+    else if (obj == _btn_home) {
+        _state = _wc->getDefaultState();
+        getRobWorkStudio()->setState(_state);
     }
 }
 

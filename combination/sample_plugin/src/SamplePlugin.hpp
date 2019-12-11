@@ -74,8 +74,8 @@ private:
     unsigned int _step;
 
     rw::math::Q _objQ;
-    rw::math::Q _homeQ = rw::math::Q(6, 1.571, -1.572, -1.572, -1.572, 1.571, 0.0);
-    rw::math::Q _goalQ = rw::math::Q(6, 1.541, -2.167, -1.422, -4.278, -1.571, -1.82);
+    rw::math::Q _homeQ = rw::math::Q(6, -1.164, -1.572, -1.572, -1.572, 1.571, 0.0);
+    rw::math::Q _goalQ = rw::math::Q(6, -1.141, -2.167, -1.422, -4.278, -1.571, -1.82);
 };
 
 #endif /*RINGONHOOKPLUGIN_HPP_*/

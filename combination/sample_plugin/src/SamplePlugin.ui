@@ -34,7 +34,7 @@
       <item>
        <widget class="QPushButton" name="_btn_home">
         <property name="text">
-         <string>Home robot</string>
+         <string>Reset workcell</string>
         </property>
        </widget>
       </item>
