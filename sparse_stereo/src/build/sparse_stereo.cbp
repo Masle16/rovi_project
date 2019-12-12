@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="sparse_stereo"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\..\;CMake Files\..\..\..\..\;CMake Files\..\..\..\..\..\;CMake Files\..\..\..\..\..\RobWork\;CMake Files\..\..\..\..\..\RobWork\RobWork\;CMake Files\..\..\..\..\..\RobWork\RobWork\cmake\;CMake Files\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\;CMake Files\..\..\..\..\..\..\..\usr\;CMake Files\..\..\..\..\..\..\..\usr\local\;CMake Files\..\..\..\..\..\..\..\usr\local\lib\;CMake Files\..\..\..\..\..\..\..\usr\local\lib\cmake\;CMake Files\..\..\..\..\..\..\..\usr\local\lib\cmake\opencv4\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="sparse_stereo">
+				<Option output="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/sparse_stereo" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DBOOST_DISABLE_ASSERTS"/>
+					<Add directory="/usr/include/eigen3"/>
+					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../src"/>
+					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/rwyaobi"/>
+					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/rwpqp"/>
+					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/qhull/src"/>
+					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/csgjs/src"/>
+					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/assimp/include"/>
+					<Add directory="/usr/local/include/opencv4"/>
+					<Add directory="/usr/include/c++/8"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/8"/>
+					<Add directory="/usr/include/c++/8/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/8/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/8/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 sparse_stereo"/>
+					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="sparse_stereo/fast">
+				<Option output="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/sparse_stereo" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DBOOST_DISABLE_ASSERTS"/>
+					<Add directory="/usr/include/eigen3"/>
+					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../src"/>
+					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/rwyaobi"/>
+					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/rwpqp"/>
+					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/qhull/src"/>
+					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/csgjs/src"/>
+					<Add directory="/home/bjarke/RobWork/RobWork/cmake/../ext/assimp/include"/>
+					<Add directory="/usr/local/include/opencv4"/>
+					<Add directory="/usr/include/c++/8"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/8"/>
+					<Add directory="/usr/include/c++/8/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/8/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/8/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 sparse_stereo/fast"/>
+					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j16 -f &quot;/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/main.cpp">
+			<Option target="sparse_stereo"/>
+		</Unit>
+		<Unit filename="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/util.hpp">
+			<Option target="sparse_stereo"/>
+		</Unit>
+		<Unit filename="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/../../../../../RobWork/RobWork/cmake/RobWorkBuildConfig_release.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\RobWork\RobWork\cmake\"/>
+		</Unit>
+		<Unit filename="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/../../../../../RobWork/RobWork/cmake/RobWorkConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\RobWork\RobWork\cmake\"/>
+		</Unit>
+		<Unit filename="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/../../../../../RobWork/RobWork/cmake/RobWorkConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\RobWork\RobWork\cmake\"/>
+		</Unit>
+		<Unit filename="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/../../../../../../../usr/local/lib/cmake/opencv4/OpenCVConfig-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/../../../../../../../usr/local/lib/cmake/opencv4/OpenCVConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/../../../../../../../usr/local/lib/cmake/opencv4/OpenCVModules-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/bjarke/Documents/ROVI_project/rovi_project/sparse_stereo/src/../../../../../../../usr/local/lib/cmake/opencv4/OpenCVModules.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
