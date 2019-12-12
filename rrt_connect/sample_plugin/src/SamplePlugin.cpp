@@ -5,7 +5,7 @@
 
 #include "util.hpp"
 
-#define WC_FILE "/home/mathi/Documents/rovi/rovi_project/rrt_connect/workcell/Scene.wc.xml"
+#define WC_FILE "rrt_connect/workcell/Scene.wc.xml"
 
 Q HOME (6, 1.571, -1.572, -1.572, -1.572, 1.571, 0.0);
 Q GOAL (6, 1.55, -1.798, -2.007, -0.909, 1.571, 0.0);
