@@ -1,0 +1,15 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+
+\section{Conclusion} \label{sec:conclusion}
+Throughout the report, methods for work cell design, robot motion planning and pose estimation of an object were explored.
+
+The best placement of the robot base position was analyzed, in Section \ref{subsec:workcell_design}, by the reachability of the robot when grasping from the top and side. The analysis showed that the side closest to the pick area of the table had most collision free solutions for each grasp position, thus the robot base was placed at (0.2, 0.0) on the table.
+
+Three different robot motion planning algorithms were explored to perform a pick and place execution. It was shown that Rapidly-exploring Random Trees Connect generated the shortest path, but had the longest planning time. Furthermore, when considering singularities point to point interpolation with and without parabolic blend performed better than Rapidly-exploring Random Trees Connect. Point to point interpolation with parabolic blend had a shorter path than point to point interpolation, with only a small difference in planning time.
+
+Two methods for pose estimation of an object were presented, one which used a simulated depth sensor and one that used two aligned cameras. It was shown that the two implemented methods had different strong sides, the simulated depth sensor method was good at pose estimation with both rotation and position, whereas the sparse stereo method was not as good at pose estimation and could only estimate the position. However, the sparse stereo method was more robust and had a shorter execution time.
+
+A combination of the pose estimation and pick and place execution was created, which was shown in \cite{combi_vid}. The combination used the simulated depth sensor method for pose estimation since it showed more precise pose estimations. Furthermore, for pick and place the combination used point to point interpolation with parabolic blend, thus ensuring that singularities were avoided. The final combination can estimate a pose of the object in the picking area, pick the object from the picking area and place the object in the place area. 
+
+\end{document}

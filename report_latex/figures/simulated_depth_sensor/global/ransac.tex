@@ -1,0 +1,26 @@
+% RANSAC FIGURE
+\begin{tikzpicture}[node distance=3cm, auto]
+    % place nodes
+    \node [block] (corr) {Find 3 random correspondences};
+    \node [block, below of=corr] (sim) {Calculate the dissimilarity};
+    \node [block, below of=sim] (pose) {Estimate transformation using the correspondences};
+    \node [block, below of=pose] (apply) {Apply transformation to the object};
+    \node [decision, below of=apply] (inlier) {Is the number of inliers too low?};
+    \node [block, below of=inlier] (re-pose) {Estimate transformation using the inlier correspondences};
+    
+    % \node [decision, below left of=pose] (validate) {Is pose the best so far?};
+    % \node [block, below right of=validate] (update) {Save pose};
+    % \node [decision, below right of=pose] (stop) {Are max iterations reached?};
+    
+    \node [cloud, left of=corr] (features) {Features};
+    % \node [cloud, right of=stop] (result) {Pose};
+    % draw edges
+    % \path [line, dashed] (features) -- (corr);
+    % \path [line] (corr) -- (pose);
+    % \path [line] (pose) -| (validate);
+    % \path [line] (validate) -- node[near start] {No} (stop);
+    % \path [line] (validate) |- node[near start] {Yes} (update);
+    % \path [line] (update) -| (stop);
+    % \path [line, dashed] (stop) -- node[near start] {Yes} (result);
+    % \path [line] (stop) |- node[near start] {No} (corr);
+\end{tikzpicture}

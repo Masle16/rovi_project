@@ -1,0 +1,17 @@
+\begin{tikzpicture}[node distance=3cm, auto]
+% FLOWCHART
+% place nodes
+\node[cloud] (load) {Load};
+\node[block, right of=load] (filter) {Perform color filtering};
+\node[block, right of=filter] (surf) {Find matches with SURF};
+\node[block, right of=surf] (3d) {Estimate the 3D points};
+\node[block, right of=3d] (center) {Find the center point};
+\node[cloud, right of=center] (pos) {Position};
+% draw edges
+\path [line, dashed] (load) -- (filter);
+\path [line] (filter) -- (surf);
+\path [line] (surf) -- (3d);
+\path [line] (3d) -- (center);
+\path [line, dashed] (center) -- (pos);
+
+\end{tikzpicture}

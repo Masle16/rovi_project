@@ -1,0 +1,17 @@
+% LOCAL FIGURE
+\begin{tikzpicture}[node distance=3cm, auto]
+    % place nodes
+    \node [block] (match) {Find nearest point pairs};
+    \node [block, below of=match] (pose) {Estimate pose with pairs};
+    \node [block, below of=pose] (apply) {Apply pose to object};
+    \node [decision, below right of=apply] (iteration) {Is max iterations reached?};
+    \node [block, left of=match] (global) {Global alignment};
+    \node [cloud, right of=iteration] (result) {pose};
+    % draw edges
+    \path [line] (match) -- (pose);
+    \path [line] (pose) -- (apply);
+    \path [line] (apply) |- (iteration);
+    \path [line] (iteration) |- node[near start] {No} (match);
+    \path [line, dashed] (iteration) -- node[near start] {Yes} (result);
+    \path [line, dashed] (global) -- (match);
+\end{tikzpicture}

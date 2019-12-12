@@ -1,0 +1,48 @@
+\documentclass[main.tex]{subfiles}
+\graphicspath{{./img/}{../img}}
+\begin{document}
+\begin{titlepage}
+	\setstretch{1}
+\begin{center}
+\textsc{\LARGE University of Southern Denmark}\\[1.5cm]
+
+\textsc{Robotics and Computer Vision}\\[0.5cm]
+
+\textsc{\large Robot Systems 7th semester - Autumn 2019}\\[0.5cm]
+% Title
+\rule{\linewidth}{0.5mm}\\[0.4cm]
+{ \LARGE \bfseries RoVi Final Project  \\[0.4cm]}
+\rule{\linewidth}{0.5mm}\\[1.2cm]
+
+% Authors and supervisor
+\begin{tabular}{c c c}
+	Bjarke Engsig Larsen     &   & Mathias Emil Slettemark-Nielsen\\ 
+	130795                  &   & 230295 \\
+	blars16@student.sdu.dk  &   & masle16@student.sdu.dk \\
+    \\ \\
+        	\cline{1-1}\cline{3-3}
+
+        	\\
+\end{tabular}
+
+
+\vfill
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.8]{figures/SDU_BLACK_RGB_png.png}
+\end{figure}
+\vfill
+
+\textbf{Supervisor:} Aljaz Kramberger \& Dirk Kraft \\ [0.5cm]
+
+\textbf{Project deadline:} 13/12-2019 
+
+\newcommand{\quickwordcount}[1]{%
+  \immediate\write18{texcount -1 -sum -merge sections/introduction.tex sections/robotics.tex sections/vision.tex sections/combination.tex sections/discussion.tex sections/conclusion.tex > #1-words}%
+  \input{#1-words}words%
+}
+\textbf{Word count:} \quickwordcount{}
+
+\end{center}
+\end{titlepage}
+\end{document}

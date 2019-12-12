@@ -1,0 +1,15 @@
+\begin{tikzpicture}[node distance=3cm, auto]
+% FLOWCHART
+% place nodes
+\node[block] (pose) {Pose estimation of the object};
+\node[block, right of=pose] (inv_pose) {Calculate the configuration for the pose};
+\node[block, right of=inv_pose] (inv_above) {Calculate the configuraion above the pose};
+\node[block, right of=inv_above] (path2obj) {Calculate the path from home to object};
+\node[block, right of=path2obj] (path2goal) {Calculate the path from object to goal};
+% draw edges
+\path [line] (pose) -- (inv_pose);
+\path [line] (inv_pose) -- (inv_above);
+\path [line] (inv_above) -- (path2obj);
+\path [line] (path2obj) -- (path2goal);
+
+\end{tikzpicture}

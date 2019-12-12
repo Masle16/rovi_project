@@ -1,0 +1,19 @@
+% GLOBAL FIGURE
+\begin{tikzpicture}[node distance=3cm, auto]
+    % place nodes
+    \node [block] (surface) {Estimate surface normals};
+    \node [block, right of=surface] (feature) {Estimate features};
+    \node[block, right of=feature] (ransac) {Random sample consensus};
+    \node [block, left of=surface] (filter) {Input cloud processing};
+    \node [block, right of=ransac] (local) {Local alignment};
+    
+    % draw edges
+    \path [line, dashed] (filter) -- (surface);
+    \path [line] (surface) -- (feature);
+    \path [line] (feature) -- (ransac);
+    \path [line, dashed] (ransac) -- (local);
+    
+    % global alignment
+    \node at (3,1.25) {Global alignment};
+    \draw[thick, dashed] (-1.5, -1) rectangle ++(9,2);
+\end{tikzpicture}

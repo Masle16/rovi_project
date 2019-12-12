@@ -1,0 +1,84 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{setup}
+\usepackage[utf8]{inputenc}
+\usepackage[siunitx]{circuitikz}
+\usepackage{pgfkeys}
+\usepackage{csquotes}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\renewcommand{\arraystretch}{1.2}
+\usetikzlibrary{shapes,arrows}
+\usepackage[table,xcdraw]{xcolor}
+
+\addbibresource{appendices/bibliography.bib}
+
+\raggedbottom
+\linespread{1.4}
+\graphicspath{{./figures/}{../figures/}}
+\DeclareGraphicsExtensions{.pdf,.png,.jpg}
+\setlength{\marginparwidth}{2cm}
+
+% Define block styles
+\tikzstyle{decision} = [diamond, draw, fill=blue!20, text width=4.5em, text badly centered, node distance=3cm, inner sep=0pt]
+\tikzstyle{block} = [rectangle, draw, fill=blue!20, text width=5em, text centered, rounded corners, minimum height=4em]
+\tikzstyle{line} = [draw, -latex']
+\tikzstyle{cloud} = [draw, ellipse,fill=red!20, node distance=3cm, minimum height=2em]
+
+\begin{document}
+
+    \cfoot[]{ \fancyplain{}{\footnotesize} }
+    \fancyhead{}
+    
+    \subfile{titlepage}
+    \clearpage
+    
+    % workload
+    \subfile{sections/workload}
+    \clearpage
+    
+    \setcounter{tocdepth}{2}
+    \tableofcontents
+    \clearpage
+    
+    \pagenumbering{arabic}    
+    \fancyhead[R]{\large \textlcsc{ \rightmark } }
+    \fancyhead[L]{\large \textsc{ section } \normalsize \thesection}
+    \cfoot{\thepage\ of \pageref{LastPage}}
+    
+    % Introduction
+    \subfile{sections/introduction}
+    \clearpage
+    
+    % robotics
+    \subfile{sections/robotics}
+    \clearpage
+    
+    % Vision
+    \subfile{sections/vision}
+    \clearpage
+    
+    % Combination
+    \subfile{sections/combination}
+    \clearpage
+    
+    % Discussion
+    \subfile{sections/discussion}
+    \clearpage
+    
+    % Conclusion
+    \subfile{sections/conclusion}
+    \clearpage
+    
+    % Literature
+    %\bibliography{appendices/bibliography.bib}
+    \printbibliography
+    \clearpage
+    
+    % Appendices
+    % \begin{appendices}
+    %     \subfile{appendices/bilag}
+    %     \clearpage
+    % \end{appendices}
+    
+\end{document}

@@ -1,0 +1,26 @@
+\documentclass[../main.tex]{subfiles}
+\begin{document}
+
+\section{Discussion} \label{sec:discussion}
+
+\begin{quote}{\textit{Mathias}}
+In Section \ref{subsec:rrt_connect}, the robot motion planning algorithm RRT-Connect is outlined. This algorithm could be optimized by adding post processing, where each node in the path is checked for whether or not it can be skipped. Thereby, eliminating unnecessary nodes and optimizing the generated path.
+\end{quote}
+
+\begin{quote}{\textit{Mathias}}
+In Section \ref{subsec:method2}, the scene only contains one object when performing pose estimation. However, if more objects were in the scene the method could be extended by doing euclidean clustering. Thus, dividing the point cloud into clusters and removing the clusters which have low similarity to the object cluster. Then, for each remaining cluster, the best transformation is found for the object and the transformation with the most inliers is considered correct.
+\end{quote}
+
+\begin{quote}{\textit{Mathias}}
+In Section \ref{subsec:method2}, the simulated depth sensor is used to obtain the scene point cloud. However, only one sensor is used, thus to optimize the number of points for the object a second depth sensor could be implemented in the scene. To ensure that the two input clouds are aligned ICP could be used, which aligns to almost aligned point clouds.
+\end{quote}
+
+\begin{quote}{\textit{Bjarke}}
+In Section \ref{subsec:p2p_interpolation} the points used to interpolate between could easily be optimized simply by observation if efficiency for the task is the goal. The way that the time intervals for each interpolated segment are calculated could also be optimized to at least accept floating point time intervals. To optimize the velocity profile for the interpolation a ramp could be added at the beginning and end of the trajectory.
+\end{quote}
+
+\begin{quote}{\textit{Bjarke}}
+In Section \ref{subsec:method3}, the sparse stereo method is outlined. One of the downsides to the method is that it does not find an orientation for the object. This could be improved either by estimating a pose based on aligning multiple of the detected matched points with  a known model of the object or by using it only for uniform known objects. Furthermore, by implementing the RANSAC method described in \ref{subsubsec:global_alignment} the uncertainty of the matching features from SURF could have had a smaller impact on the estimated pose of the object.
+\end{quote}
+
+\end{document}

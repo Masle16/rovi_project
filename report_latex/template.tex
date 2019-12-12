@@ -1,0 +1,156 @@
+\documentclass[a4paper,11pt,danish,oneside]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[danish]{babel}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage[T1]{fontenc}
+\usepackage[top=3cm, bottom=3cm, left=2.5cm, right=3.5cm]{geometry}
+\usepackage{tocvsec2}
+\usepackage{float}
+\usepackage{tabularx}
+\usepackage{parskip}
+\usepackage{mathtools}
+\usepackage{changepage}
+\usepackage{mdwlist}
+\usepackage{algorithm}
+\usepackage{titlesec}
+\usepackage{algpseudocode}
+\usepackage{todonotes}
+\algrenewcommand\algorithmicprocedure{\textbf{function}}
+\usepackage[nottoc,numbib]{tocbibind}
+\usepackage{setspace}
+\linespread{1.4}
+
+\titlespacing*{\section}{0pt}{0.5cm}{0cm}
+\titlespacing*{\subsection}{0pt}{0.3cm}{0cm}
+\titlespacing*{\subsubsection}{0pt}{0.1cm}{0cm}
+\titlespacing*{\paragraph}{0pt}{0cm}{0cm}
+\graphicspath{ {./img/} }
+\DeclareGraphicsExtensions{.pdf,.png,.jpg}
+\begin{document}
+
+\missingfigure
+
+\section*{Section}
+This is a section.
+\subsection*{Subsection}
+This is a sub-section.
+\subsubsection*{subsubsection}
+This is a subsub-section
+\section{Section}
+Section, again...
+\subsection{Subsection}
+And yet again :)
+\subsubsection{subsubsection}
+... And a little subsub-section... So cute.
+{\setstretch{1}
+    \begin{itemize}
+    	\item First
+    	\item Second
+    	\item Third
+    \end{itemize}
+}
+
+{\setstretch{1}
+	\begin{enumerate}
+		\item First
+		\item Second
+		\item Third
+	\end{enumerate}
+}
+
+\begin{description}
+	\setstretch{1}
+	\item [First]\hfill \\  Description 
+	\item [Second]\hfill \\  Description
+	\item [Third]\hfill \\ Description
+\end{description}
+
+\begin{description}
+	\setstretch{1}
+	\item [First] -  Description 
+	\item [Second] -  Description
+	\item [Third] - Description
+\end{description}
+
+\begin{equation}
+	s(n)=x(n)+2 \cos(2 \pi f) s(n-1)-s(n-2)
+\end{equation}
+
+This is an equation $s(n)=x(n)+2 \cos(2 \pi f) s(n-1)-s(n-2)$ it is in text.
+
+\begin{table}[h]
+	\begin{tabularx}{\textwidth}{|X|X|X|X|}
+		\hline
+		\multicolumn{2}{|l|}{\textbf{Goertzel}} & \multicolumn{2}{l|}{\textbf{FFT}} \\ \hline
+	\textbf{Pro} & \textbf{Con} & \textbf{Pro} & \textbf{Con} \\ \hline
+	First & Second & Third & Fourth \\ \hline
+	& & & \\ \hline
+	\end{tabularx}
+	\caption{This is a tabel}
+	\label{tabel1}
+\end{table}
+
+I'm referenceing a tabel l \ref{tabel1}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.2]{images/universe}
+	\caption{Above is the file name, without extension}
+	\label{monkeylars}
+\end{figure}
+
+Picture \ref{monkeylars} have the label monkeylars.
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.2]{images/universe}
+	\caption{ Placement of picture can be choosen after begin\{figure\}, 'H' is EXACTLY here, 'h' is roughly here, 't' is top, and 'b' is bottom.}
+\end{figure}
+
+
+
+\begin{algorithm}[h]
+	\begin{algorithmic}[1]
+		\Procedure{CRCencoder}{dataword}
+		\State dividend = dataword
+		\For{i from 0 to length of divisor - 1}
+		\State append dividend with 0 
+		\EndFor
+		\For{i from 0 to length of dataword}
+		\If{i'th element of dividend is 0}
+		\For{j from 0 to length of divisor}
+		\State set dividend i + j to dividend i + j \textbf{xor} with divisor j
+		\EndFor
+		\EndIf
+		\EndFor
+		\For{i from 0 to length of divisor - 1}
+		\State append dataword with dividend i + length of dataword
+		\EndFor
+		\EndProcedure
+	\end{algorithmic}
+	\caption{Caption for the algoritm}
+	\label{algo1}
+\end{algorithm}
+
+\begin{figure}[h]
+	\begin{center}
+		\begin{minipage}{0.45\textwidth}
+			\centering
+			\includegraphics[scale=1]{images/universe}
+		\end{minipage}
+		\begin{minipage}{0.45\textwidth}
+			\centering
+			\includegraphics[scale=1]{images/universe}
+		\end{minipage}
+		\caption{Here is two pictures, side by side with text}
+	\end{center}
+\end{figure}
+
+\cite{Label}
+Here we use the cite function, and the label from the bibliography. 
+\cite[p.666]{Label}
+It is also possible to cite with a page number.
+
+\end{document}
