@@ -60,10 +60,14 @@ const std::string DEVICE_FILE = "UR-6-85-5-A";
 
 void add_gaussian_noise(cv::Mat &i1, cv::Mat &i2, const float sd1, const float sd2, const float sd3);
 
+/**
+ * Inspiration --> https://www.opencv-srf.com/2010/09/object-detection-using-color-seperation.html?fbclid=IwAR0iNvPB5CqZsyx7cWDhiPAi8egmKFPp-NXYJWEJvw5xbdS3QI4QMRB7LD0
+ * @brief colorFiltering
+ * @param input
+ * @return
+ */
 cv::Mat colorFiltering(const cv::Mat &input) {
     cv::Mat result, img = input.clone(), hsv, mask;
-
-
 //    //Create trackbars in "Control" window
 //    cv::namedWindow("Control", cv::WINDOW_AUTOSIZE); //create a window called "Control"
 //    int lowH = 0, highH = 179, lowS = 0, highS = 255, lowV = 0, highV = 255;
@@ -91,8 +95,6 @@ cv::Mat colorFiltering(const cv::Mat &input) {
 //    }
 //    cv::cvtColor(img, hsv, cv::COLOR_BGR2HSV);
 //    cv::inRange(hsv, cv::Scalar(lowH, lowS, lowV), cv::Scalar(highH, highS, highV), mask);
-    
-    
     cv::cvtColor(img, hsv, cv::COLOR_BGR2HSV);
     //cv::inRange(hsv, cv::Scalar(0, 30, 0), cv::Scalar(20, 255, 255), mask);
     cv::inRange(hsv, cv::Scalar(0, 90, 125), cv::Scalar(179, 255, 255), mask);
@@ -104,6 +106,13 @@ cv::Mat colorFiltering(const cv::Mat &input) {
     return result;
 }
 
+/**
+ * This functions is from lecture 2 in computer vision
+ * @brief constructProjectionMat
+ * @param KA
+ * @param H
+ * @return
+ */
 cv::Mat constructProjectionMat(Eigen::Matrix<double, 3, 4> KA, Eigen::Matrix<double, 4, 4> H) {
     // convert eigen matrix to cv::mat
     cv::Mat _KA, _H;
@@ -113,6 +122,12 @@ cv::Mat constructProjectionMat(Eigen::Matrix<double, 3, 4> KA, Eigen::Matrix<dou
     return _KA * _H;
 }
 
+/**
+ * This functions is from lecture 2 in computer vision
+ * @brief splitPp
+ * @param proj
+ * @return
+ */
 std::array<cv::Mat, 2> splitPp(cv::Mat proj) {
     std::array<cv::Mat, 2> pp;
     pp[0] = proj(cv::Range(0,3), cv::Range(0,3));
@@ -120,6 +135,12 @@ std::array<cv::Mat, 2> splitPp(cv::Mat proj) {
     return pp;
 }
 
+/**
+ * This functions is from lecture 2 in computer vision
+ * @brief computeOpticalCenter
+ * @param pp
+ * @return
+ */
 cv::Mat computeOpticalCenter(std::array<cv::Mat, 2> pp) {
     // compute homogeneous coordinates
     cv::Mat one = cv::Mat::ones(1, 1, CV_64F);
@@ -128,6 +149,14 @@ cv::Mat computeOpticalCenter(std::array<cv::Mat, 2> pp) {
     return C;
 }
 
+/**
+ * This functions is from lecture 2 in computer vision
+ * @brief computeFundamentalMat
+ * @param e
+ * @param projRight
+ * @param projLeft
+ * @return
+ */
 cv::Mat computeFundamentalMat(cv::Mat e, cv::Mat projRight, cv::Mat projLeft) {
     // create symmetric skew 'cross product matrix' from the right epipole
     cv::Mat erx = cv::Mat::zeros(3,3,CV_64F);
@@ -140,6 +169,13 @@ cv::Mat computeFundamentalMat(cv::Mat e, cv::Mat projRight, cv::Mat projLeft) {
     return erx * projRight * projLeft.inv(cv::DECOMP_SVD);
 }
 
+/**
+ * This functions is from lecture 2 in computer vision
+ * @brief drawEpipolarLine
+ * @param img
+ * @param line
+ * @param width
+ */
 void drawEpipolarLine(cv::Mat &img, cv::Mat line, double width=640) {
     cv::Point p1, p2;
     double x = line.at<double>(0,0), y = line.at<double>(0,1), z = line.at<double>(0,2);
@@ -150,6 +186,13 @@ void drawEpipolarLine(cv::Mat &img, cv::Mat line, double width=640) {
     cv::line(img, p1, p2, cv::Scalar(0,255,0), 2, cv::LINE_AA);
 }
 
+/**
+ * This functions is from lecture 2 in computer vision
+ * @brief computePluckerLine
+ * @param M1
+ * @param M2
+ * @return
+ */
 std::array<cv::Mat, 2> computePluckerLine(cv::Mat M1, cv::Mat M2) {
     std::array<cv::Mat, 2> plucker;
     plucker[0] = M1.cross(M2) / cv::norm(M2);
@@ -157,6 +200,13 @@ std::array<cv::Mat, 2> computePluckerLine(cv::Mat M1, cv::Mat M2) {
     return plucker;
 }
 
+/**
+ * This functions is from lecture 2 in computer vision
+ * @brief computePluckerIntersect
+ * @param plucker1
+ * @param plucker2
+ * @return
+ */
 cv::Mat computePluckerIntersect(std::array<cv::Mat, 2> plucker1, std::array<cv::Mat, 2> plucker2) {
     cv::Mat mu1 = plucker1[0], mu2 = plucker2[0], v1 = plucker1[1], v2 = plucker2[1];
     // compute the point on the left line which is closeset to the right line, and vice versa
@@ -171,6 +221,13 @@ cv::Mat computePluckerIntersect(std::array<cv::Mat, 2> plucker1, std::array<cv::
     return M1 + (M2 - M1) / 2;
 }
 
+/**
+ * This functions was given on BlackBoard
+ * @brief getProjectionMatrix
+ * @param frameName
+ * @param output
+ * @param camMat
+ */
 void getProjectionMatrix(const std::string &frameName, cv::Mat &output, cv::Mat &camMat) {
     // load workcell
     rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(WC_FILE);
@@ -227,6 +284,18 @@ cv::Point3f mat2Point3f(cv::Mat m) {
     return pnt;
 }
 
+/**
+ * This functions is from lecture 2 in computer vision
+ * @brief triangulate
+ * @param ptLeft
+ * @param ptRight
+ * @param fLeftRight
+ * @param centerLeft
+ * @param centerRight
+ * @param ppLeft
+ * @param ppRight
+ * @return
+ */
 cv::Mat triangulate(const cv::Point2f &ptLeft,
                     const cv::Point2f &ptRight,
                     const cv::Mat &fLeftRight,

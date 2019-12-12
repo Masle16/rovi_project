@@ -48,6 +48,10 @@ To run the sample plugin in RobWorks:
 
 **Method 3: Sparse Stereo**
 
+- The sparse stereo method is located in [sparse_stereo](sparse_stereo).
+- The code for the sparse stereo method is placed in [sparse_stereo/sample_plugin/src](sparse_stereo/sample_plugin/src).
+- The workcell used for sparse stereo is at [sparse_stereo/workcell/Scene.wc.xml](sparse_stereo/workcell/Scene.wc.xml).
+
 ## Combination
 
 - The combination of the robotics and vision is located in [combination](combination).
