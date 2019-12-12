@@ -17,6 +17,11 @@ When running RobWorks plugins please be in the default folder(this one).
 
 **Point to Point Interpolation & Point to Point Interpolation with Parabolic Blend**
 
+- The point to point interpolation with and without parabolic blend is located in [p2p_interpolation](p2p_interpolation).
+- The code is located in [p2p_interpolation/main.cpp](p2p_interpolation/main.cpp), [p2p_interpolation/p2p_interpolation.cpp](p2p_interpolation/p2p_interpolation.cpp) and [p2p_interpolation/p2p_interpolation.h](p2p_interpolation/p2p_interpolation.h).
+- The workcell used is [p2p_interpolation/Project_WorkCell/Scene.wc.xml](p2p_interpolation/Project_WorkCell/Scene.wc.xml).
+The dataprocessing is placed in [p2p_interpolation/interpolation_results.m](p2p_interpolation/interpolation_results.m).
+
 **Rapidly Random Trees Connect (RRT Connect)**
 
 - The RRT-Connect method is located in [rrt_connect](rrt_connect).
@@ -24,7 +29,6 @@ When running RobWorks plugins please be in the default folder(this one).
 - The workcell for can be found in [rrt_connect/workcell](rrt_connect/workcell).
 - The dataprocessing is in [rrt_connect/analysis.m](rrt_connect/analysis.m).
 - The figures for the report are in [rrt_connect/figures](rrt_connect/figures).
-- Further information can be found in [rrt_connect/README.md](rrt_connect/README.md).
 
 ## Vision
 
@@ -35,7 +39,6 @@ When running RobWorks plugins please be in the default folder(this one).
 - The workcell used can be found in [simulated_depth_sensor/workcell](simulated_depth_sensor/workcell).
 - The dataprocessing is located in [simulated_depth_sensor/analysis_of_results.m](simulated_depth_sensor/analysis_of_results.m).
 - The figures for the report are in [simulated_depth_sensor/figures](simulated_depth_sensor/figures).
-- Further description can be found in the [simulated_depth_sensor/README.md](simulated_depth_sensor/README.md).
 
 To run the sample plugin in RobWorks:
 
@@ -52,7 +55,6 @@ To run the sample plugin in RobWorks:
 - The workcell for the combination is located in [combination/workcell](combination/workcell).
 - The figures for the report are in [combination/figures](combination/figures).
 - A video showing the combination is at [combination/combination_video.webm](combination/combination_video.webm).
-- Further information is in the [combination/README.md](combination/README.md).
 
 To executed the generated sample plugin for RobWorks:
 
