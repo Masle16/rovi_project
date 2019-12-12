@@ -17,6 +17,7 @@
 #include <opencv2/features2d.hpp>
 #include <opencv2/xfeatures2d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
 
 #include <pcl/point_types.h>
 #include <pcl/registration/registration.h>
@@ -56,8 +57,13 @@ const std::string DEVICE_FILE = "UR-6-85-5-A";
 /*************/
 /* FUNCTIONS */
 /*************/
+
+void add_gaussian_noise(cv::Mat &i1, cv::Mat &i2, const float sd1, const float sd2, const float sd3);
+
 cv::Mat colorFiltering(const cv::Mat &input) {
     cv::Mat result, img = input.clone(), hsv, mask;
+
+
 //    //Create trackbars in "Control" window
 //    cv::namedWindow("Control", cv::WINDOW_AUTOSIZE); //create a window called "Control"
 //    int lowH = 0, highH = 179, lowS = 0, highS = 255, lowV = 0, highV = 255;
@@ -85,8 +91,11 @@ cv::Mat colorFiltering(const cv::Mat &input) {
 //    }
 //    cv::cvtColor(img, hsv, cv::COLOR_BGR2HSV);
 //    cv::inRange(hsv, cv::Scalar(lowH, lowS, lowV), cv::Scalar(highH, highS, highV), mask);
+    
+    
     cv::cvtColor(img, hsv, cv::COLOR_BGR2HSV);
-    cv::inRange(hsv, cv::Scalar(0, 30, 0), cv::Scalar(20, 255, 255), mask);
+    //cv::inRange(hsv, cv::Scalar(0, 30, 0), cv::Scalar(20, 255, 255), mask);
+    cv::inRange(hsv, cv::Scalar(0, 90, 125), cv::Scalar(179, 255, 255), mask);
     cv::erode(mask, mask, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)) );
     cv::dilate(mask, mask, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)) );
     cv::dilate(mask, mask, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)) );
@@ -425,6 +434,9 @@ void findMatches(cv::Mat &src_l, cv::Mat &src_r, std::vector<cv::Point2f> &l2r, 
     cv::Mat _src_l = colorFiltering(src_l);
     cv::Mat _src_r = colorFiltering(src_r);
 
+    cv::imshow("Filtered left", _src_l);
+    cv::imshow("Filtered right", _src_r);
+
     // step 1: detect the keypoints using surf detector, compute the descriptors
     int minHessian = 400;
     cv::Ptr<cv::xfeatures2d::SURF> detector = cv::xfeatures2d::SURF::create(minHessian);
@@ -444,13 +456,17 @@ void findMatches(cv::Mat &src_l, cv::Mat &src_r, std::vector<cv::Point2f> &l2r, 
     matcher->knnMatch(descriptor2, descriptor1, matches2, 2);
 
     // remove matches for which NN ratio is > than threshold
-    std::cout << "\nClean image 1 --> image 2 matches: " << ratioTest(matches1) << " (removed)."
-              << "\nClean image 2 --> image 1 matches: " << ratioTest(matches2) << " (removed)."
-              << std::endl;
+    // std::cout << "\nClean image 1 --> image 2 matches: " << ratioTest(matches1) << " (removed)."
+    //           << "\nClean image 2 --> image 1 matches: " << ratioTest(matches2) << " (removed)."
+    //           << std::endl;
 
     // remove non-symmetrical matches
     std::vector<cv::DMatch> goodMatches;
     symmetryTest(matches1, matches2, goodMatches);
+
+    cv::Mat matchImg;
+    cv::drawMatches(_src_l, keypoints1, _src_r, keypoints2, goodMatches, matchImg);
+    cv::imshow("Matches", matchImg);
 
     // get point
     for (std::size_t i = 0; i < goodMatches.size(); i++) {
@@ -461,7 +477,112 @@ void findMatches(cv::Mat &src_l, cv::Mat &src_r, std::vector<cv::Point2f> &l2r, 
     }
 }
 
-void getInitial3dPnts(const cv::Mat &proj_l, const cv::Mat &proj_r, std::vector<cv::Mat> &pnts_3d) {
+void getInitial3dPnts(const cv::Mat &proj_l, const cv::Mat &proj_r, std::vector<cv::Mat> &pnts_3d, rw::math::Vector3D<> &v3d_out, float noise) {
+    
+
+    // get optical center
+    std::array<cv::Mat, 2> pp_l = splitPp(proj_l);
+    std::array<cv::Mat, 2> pp_r = splitPp(proj_r);
+    cv::Mat c_l = computeOpticalCenter(pp_l);
+    cv::Mat c_r = computeOpticalCenter(pp_r);
+    //std::cout << "\nOptical center left:\n" << c_l
+    //          << "\nOptical center Right:\n" << c_r << std::endl;
+
+
+    // load images
+    cv::Mat src_l = cv::imread("Camera_Left.png", cv::IMREAD_COLOR);
+    cv::Mat src_r = cv::imread("Camera_Right.png", cv::IMREAD_COLOR);
+
+    add_gaussian_noise(src_l, src_r, noise, noise, noise);
+
+
+    cv::imshow("left",src_l);
+    cv::imshow("right",src_r);
+    //cv::waitKey(0);
+
+    // Find features in the images:
+    std::vector<cv::Point2f> l2r, r2l;
+    findMatches(src_l, src_r, l2r, r2l);
+
+    //std::cout << "Projection 1:\n" << proj_l << std::endl << "Projection 2:\n" << proj_r << std::endl;
+    std::cout << "l2r: \n" << l2r.size() << "\nr2l: \n" << r2l.size() << std::endl;
+    if (l2r.size() > 0 && r2l.size() > 0) {
+        cv::Mat out_points;
+        cv::triangulatePoints(proj_l,proj_r,l2r,r2l,out_points);
+
+        //std::cout << out_points.cols << std::endl;
+        // Scales with the fourth value.
+        std::vector<rw::math::Vector3D<>> lc_points;
+        for (int i = 0; i < out_points.cols; i++) {
+            float scale = 1/out_points.at<float>(3,i);
+            lc_points.push_back(rw::math::Vector3D<>(scale*out_points.at<float>(0,i), scale*out_points.at<float>(1,i), scale*out_points.at<float>(2,i)));
+        }
+
+
+        // Find the point with the shortest average dist to all other points
+        double best_avg_dist = std::numeric_limits<double>::max();
+        double avg_dist = 0;
+        size_t best_point = 0;
+        rw::math::EuclideanMetric<rw::math::Vector3D<>> metric;
+        std::cout << "Før beregning af bedste punkt" << std::endl;
+        for (size_t i = 0; i < lc_points.size(); i++) {
+            for (size_t j = 0; j < lc_points.size(); j++) {
+                // If i not equal j then calculate the distance between the points and sum them.
+                if (i != j) {
+                    avg_dist += metric.distance(lc_points[i], lc_points[j])/lc_points.size()-1;
+                }
+            }
+            if (avg_dist < best_avg_dist) {
+                // Update the best and save the i for indexing on lc_points.
+                best_avg_dist = avg_dist;
+                best_point = i;
+            }
+            avg_dist = 0;
+        }
+        std::cout << "Lige efter bedste punkt " << best_point << std::endl;
+        v3d_out = lc_points[best_point];
+    } else {
+        v3d_out = rw::math::Vector3D<>(0, 0, 0);
+        std::cout << "Failed at noise level: " << noise << std::endl;
+    }
+
+    // Find the outliers:
+    // Run 100 times. ( Only works if points are 3 or more ).
+    /*
+    rw::math::Math::seed();
+    rw::math::Vector3D<> best_center(500, 500, 500);
+    double best_dist = std::numeric_limits<double>::max();
+    for (int i = 0; i < 100; i++) {
+        // Find three random points:
+        int r1 = rw::math::Math::ranI(0, int(lc_points.size()));
+        int r2 = r1;
+        int r3 = r1;
+        while (r2 == r1) {
+            r2 = rw::math::Math::ranI(0, int(lc_points.size()));
+        }
+        while (r3 == r1 || r3 == r2) {
+            r3 = rw::math::Math::ranI(0, int(lc_points.size()));
+        }
+
+        rw::math::Vector3D<> p1 = lc_points[r1];
+        rw::math::Vector3D<> p2 = lc_points[r2];
+        rw::math::Vector3D<> p3 = lc_points[r3];
+
+        rw::math::Vector3D<> center = rw::math::Vector3D<>((p1(0)+p2(0)+p3(0))/3, (p1(1)+p2(1)+p3(1))/3, (p1(2)+p2(2)+p3(2))/3);
+        rw::math::EuclideanMetric<rw::math::Vector3D<>> metric;
+        double dist = metric.distance(best_center, center);
+        if (dist < best_dist) {
+            best_center = center;
+            best_dist = dist;
+        }
+    }
+    
+
+    v3d_out = best_center;
+*/
+    
+
+    /*
     // get optical center
     std::array<cv::Mat, 2> pp_l = splitPp(proj_l);
     std::array<cv::Mat, 2> pp_r = splitPp(proj_r);
@@ -495,7 +616,7 @@ void getInitial3dPnts(const cv::Mat &proj_l, const cv::Mat &proj_r, std::vector<
         pnts_3d.push_back(pnt3D);
 
         std::cout << "\n3D point -->\n" << pnts_3d[i] << std::endl;
-    }
+    }*/
 }
 
 void getNew3dPnts(const cv::Mat &proj_l, const cv::Mat &proj_r, std::vector<cv::Mat> &pnts_3d) {
@@ -579,19 +700,19 @@ void getInitialPose(Pose &pose) {
 }
 
 void getCamerasInfo(cv::Mat &proj_l, cv::Mat &proj_r, cv::Mat &cam_mat_l, cv::Mat &cam_mat_r) {
-    std::cout << "\nLeft camera.." << std::endl;
+    //std::cout << "\nLeft camera.." << std::endl;
     getProjectionMatrix("Camera_Left", proj_l, cam_mat_l);
-    std::cout << "\nLeft camera projection matrix -->\n" << proj_l << std::endl;
-    std::cout << "\nLeft camera matrix -->\n" << cam_mat_l << std::endl;
+    //std::cout << "\nLeft camera projection matrix -->\n" << proj_l << std::endl;
+    //std::cout << "\nLeft camera matrix -->\n" << cam_mat_l << std::endl;
 
-    std::cout << "\nRight camera.." << std::endl;
+    //std::cout << "\nRight camera.." << std::endl;
     getProjectionMatrix("Camera_Right", proj_r, cam_mat_r);
-    std::cout << "\nRight camera projection matrix -->\n" << proj_r << std::endl;
-    std::cout << "\nRight camera matrix -->\n" << cam_mat_r << std::endl;
+    //std::cout << "\nRight camera projection matrix -->\n" << proj_r << std::endl;
+    //std::cout << "\nRight camera matrix -->\n" << cam_mat_r << std::endl;
 }
 
 void moveFrameRandom(rw::models::WorkCell::Ptr &workcell, rw::kinematics::State &state, const std::string &frameName) {
-    std::cout << "\nMoving " << frameName << " to random position.." << std::endl;
+    //std::cout << "\nMoving " << frameName << " to random position.." << std::endl;
 
     // initialise seed
     rw::math::Math::seed();
@@ -616,10 +737,10 @@ void moveFrameRandom(rw::models::WorkCell::Ptr &workcell, rw::kinematics::State 
     // move object
     frame->moveTo(newPose, state);
 
-    std::cout << "\tNew position of " << frameName << " -->"
-              << "\n\tPosition: " << frame->getTransform(state).P()
-              << "\n\tRotation: " << frame->getTransform(state).R()
-              << std::endl;
+    // std::cout << "\tNew position of " << frameName << " -->"
+    //           << "\n\tPosition: " << frame->getTransform(state).P()
+    //           << "\n\tRotation: " << frame->getTransform(state).R()
+    //           << std::endl;
 }
 
 void moveFrame(rw::models::WorkCell::Ptr &wc, rw::kinematics::State &state, const std::string &frameName, const Pose &newPose) {
@@ -634,7 +755,7 @@ void moveFrame(rw::models::WorkCell::Ptr &wc, rw::kinematics::State &state, cons
     // get current pose
     std::cout << "\tOld pose -->"
               << "\n\t\tPosition: " << frame->getTransform(state).P()
-              << "\n\t\tRotation: " << frame->getTransform(state).R()
+              << "\n\t\tRotation: " << rw::math::RPY<>(frame->getTransform(state).R())
               << std::endl;
 
     // move object
@@ -643,43 +764,45 @@ void moveFrame(rw::models::WorkCell::Ptr &wc, rw::kinematics::State &state, cons
     // get current pose
     std::cout << "\tNew pose -->"
               << "\n\t\tPosition: " << frame->getTransform(state).P()
-              << "\n\t\tRotation: " << frame->getTransform(state).R()
+              << "\n\t\tRotation: " << Rpy(frame->getTransform(state).R())
               << std::endl;
 }
 
 std::vector<Pose> loadRandomPoses() {
     std::cout << "Loading random poses.." << std::endl;
+    double ya = rw::math::Deg2Rad*90;
+    double ra = rw::math::Deg2Rad*90;
     std::vector<Pose> result = {
-        Pose( Vec(-0.145188, 0.443078, 0.13275), Rpy(90.655720, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.093862, 0.436711, 0.13275), Rpy(118.604228, 0, 0).toRotation3D() ),
-        Pose( Vec(0.122399, 0.495443, 0.13275), Rpy(170.850844, 0, 0).toRotation3D() ),
-        Pose( Vec(0.091337, 0.498684, 0.1327), Rpy(290.151910, 0, 0).toRotation3D() ),
-        Pose( Vec(0.264603, 0.418769, 0.13275), Rpy(298.242230, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.235944, 0.419935, 0.13275), Rpy(62.161712, 0, 0).toRotation3D() ),
-        Pose( Vec(0.135748, 0.504414, 0.13275), Rpy(10.789436, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.250770, 0.419906, 0.13275), Rpy(303.808868, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.200208, 0.488607, 0.13275), Rpy(184.357109, 0, 0).toRotation3D() ),
-        Pose( Vec(0.108419, 0.449887, 0.13275), Rpy(137.183094, 0, 0).toRotation3D() ),
-        Pose( Vec(0.217942, 0.460303, 0.13275), Rpy(224.500953, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.203439, 0.422350, 0.13275), Rpy(30.890149, 0, 0).toRotation3D() ),
-        Pose( Vec(0.205437, 0.440262, 0.13275), Rpy(306.213153, 0, 0).toRotation3D() ),
-        Pose( Vec(0.000940, 0.390936, 0.13275), Rpy(258.436252, 0, 0).toRotation3D() ),
-        Pose( Vec(0.011533, 0.466524, 0.13275), Rpy(39.489767, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.083706, 0.473673, 0.13275), Rpy(82.114563, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.215880, 0.460187, 0.13275), Rpy(299.988160, 0, 0).toRotation3D() ),
-        Pose( Vec(0.111775, 0.417223, 0.13275), Rpy(15.156711, 0, 0).toRotation3D() ),
-        Pose( Vec(0.286724, 0.451241, 0.13275), Rpy(109.719710, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.007980, 0.407581, 0.13275), Rpy(110.609545, 0, 0).toRotation3D() ),
-        Pose( Vec(0.142925, 0.431557, 0.13275), Rpy(134.673396, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.025873, 0.417860, 0.13275), Rpy(338.794893, 0, 0).toRotation3D() ),
-        Pose( Vec(0.260845, 0.376162, 0.13275), Rpy(183.421458, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.143089, 0.519847, 0.13275), Rpy(99.111381, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.190782, 0.508894, 0.13275), Rpy(252.283274, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.272231, 0.508522, 0.13275), Rpy(18.848865, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.289646, 0.426160, 0.13275), Rpy(103.919571, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.247180, 0.440277, 0.13275), Rpy(36.188349, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.213684, 0.408139, 0.13275), Rpy(117.088340, 0, 0).toRotation3D() ),
-        Pose( Vec(-0.241997, 0.445336, 0.13275), Rpy(357.345558, 0, 0).toRotation3D() )
+        Pose( Vec(-0.145188, 0.443078, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.093862, 0.436711, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(0.122399, 0.495443, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(0.091337, 0.498684, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(0.264603, 0.418769, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.235944, 0.419935, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(0.135748, 0.504414, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.250770, 0.419906, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.200208, 0.488607, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(0.108419, 0.449887, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(0.217942, 0.460303, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.203439, 0.422350, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(0.205437, 0.440262, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(0.000940, 0.390936, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(0.011533, 0.466524, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.083706, 0.473673, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.215880, 0.460187, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(0.111775, 0.417223, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(0.286724, 0.451241, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.007980, 0.407581, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(0.142925, 0.431557, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.025873, 0.417860, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(0.260845, 0.376162, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.143089, 0.519847, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.190782, 0.508894, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.272231, 0.508522, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.289646, 0.426160, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.247180, 0.440277, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.213684, 0.408139, 0.13275), Rpy(ra, 0, ya).toRotation3D() ),
+        Pose( Vec(-0.241997, 0.445336, 0.13275), Rpy(ra, 0, ya).toRotation3D() )
     };
     return result;
 }
@@ -814,4 +937,21 @@ std::pair<double, double> calcError(rw::models::WorkCell::Ptr workcell, rw::kine
 
     result = std::make_pair(diffAngle, diffPos);
     return result;
+}
+
+
+void add_gaussian_noise(cv::Mat &i1, cv::Mat &i2, const float sd1, const float sd2, const float sd3) {
+    std::cout << "Starting to add gaussian" << std::endl;
+    cv::Mat mean = cv::Mat::zeros(cv::Size(1, i1.channels()), CV_32FC1);
+    float sd_vals[] = {sd1, sd2, sd3};
+    std::cout << "Mean: " << mean << std::endl;
+    cv::Mat std_dev = cv::Mat(i1.channels(), 1, CV_32FC1, sd_vals);
+    std::cout << "Std dev: " << std_dev << std::endl;
+    cv::Mat noise = cv::Mat(i1.size(), i1.type());
+    cv::randn(noise, mean, std_dev);
+    i1 += noise;
+
+    noise = cv::Mat(i2.size(), i2.type());
+    cv::randn(noise, mean, std_dev);
+    i2 += noise;
 }

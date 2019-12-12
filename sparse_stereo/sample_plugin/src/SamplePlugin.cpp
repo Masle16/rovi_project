@@ -2,6 +2,10 @@
 #include "SamplePlugin.hpp"
 #include "utils.hpp"
 
+//std::vector<Pose> loadRandomPoses();
+//void moveFrame(rw::models::WorkCell::Ptr &wc, rw::kinematics::State &state, const std::string &frameName, const Pose &newPose);
+void save2File(const std::string &filePath, const std::vector<double> &dists, const std::vector<double> &times);
+
 SamplePlugin::SamplePlugin():RobWorkStudioPlugin("SamplePluginUI", QIcon(":/pa_icon.png")) {
     setupUi(this);
 
@@ -17,6 +21,7 @@ SamplePlugin::SamplePlugin():RobWorkStudioPlugin("SamplePluginUI", QIcon(":/pa_i
     connect(_spinBox,        SIGNAL(valueChanged(int)), this, SLOT(btnPressed()) );
 
     connect(_btn_pose,       SIGNAL(pressed()),         this, SLOT(btnPressed()) );
+    connect(_btn_touch_duck, SIGNAL(pressed()),         this, SLOT(btnPressed()) );
 
     _framegrabber = NULL;
 
@@ -171,12 +176,13 @@ void SamplePlugin::btnPressed() {
         getRobWorkStudio()->setState(_state);
     }
     else if (obj == _btn_pose) {
-        cv::Mat proj_l, proj_r, cam_mat_l, cam_mat_r;
+        /*cv::Mat proj_l, proj_r, cam_mat_l, cam_mat_r;
         getCamerasInfo(proj_l, proj_r, cam_mat_l, cam_mat_r);
 
         // get initial points
         std::vector<cv::Mat> src_pnts_3d;
-        getInitial3dPnts(proj_l, proj_r, src_pnts_3d);
+        rw::math::Vector3D<> goal;
+        getInitial3dPnts(proj_l, proj_r, src_pnts_3d, goal);
 
         // get initial pose
         Pose src_pose;
@@ -193,6 +199,116 @@ void SamplePlugin::btnPressed() {
 
         // calc error
         calcError(_wc, _state, estimatedPose);
+        */
+        
+        cv::Mat proj_l, proj_r, cam_mat_l, cam_mat_r;
+        getCamerasInfo(proj_l, proj_r, cam_mat_l, cam_mat_r);
+        // get initial points
+        std::vector<cv::Mat> src_pnts_3d;
+        rw::math::Vector3D<> goal_point;
+        getInitial3dPnts(proj_l, proj_r, src_pnts_3d, goal_point, 0);
+
+        //rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(WC_FILE);
+        //rw::kinematics::State state = wc->getDefaultState();
+        const std::string deviceName = "UR-6-85-5-A";
+        rw::models::SerialDevice::Ptr robot = _wc->findDevice<rw::models::SerialDevice>(deviceName);
+        _state = _wc->getDefaultState();
+
+        rw::invkin::ClosedFormIKSolverUR ikinSolver(robot, _state);
+
+        rw::math::Transform3D<> desired_point(goal_point, rw::math::EAA<>(0,0,0).toRotation3D());
+
+        std::vector<rw::math::Q> test_point = ikinSolver.solve(desired_point,_state);
+
+        std::cout << test_point.size() << ", " << test_point[0] << std::endl;
+        
+
+        robot->setQ(test_point[0], _state);
+        getRobWorkStudio()->setState(_state);
+
+    }
+    else if (obj == _btn_touch_duck) {
+
+        std::vector<rw::math::Transform3D<>> poses = loadRandomPoses();
+
+        std::vector<double> times, dists;
+
+        rw::math::Vector3D<> goal_point;
+
+        Pose next_pose = poses[0];
+        moveFrame(_wc, _state, "Duck", next_pose);
+        getRobWorkStudio()->setState(_state);
+
+        getImage();
+
+        cv::Mat tmp_proj_l, tmp_proj_r, tmp_cam_mat_l, tmp_cam_mat_r;
+        getCamerasInfo(tmp_proj_l, tmp_proj_r, tmp_cam_mat_l, tmp_cam_mat_r);
+
+        std::vector<cv::Mat> tmp_src_pnts_3d;
+                
+        getInitial3dPnts(tmp_proj_l, tmp_proj_r, tmp_src_pnts_3d, goal_point, 0);
+
+        float noise_level = 0;
+        //for (int j = 0; j <= 50; j++) {
+            // Do all the poses for different noise levels.
+
+            //for (size_t i = 0; i < poses.size(); i++) {
+                //next_pose = poses[i];
+                moveFrame(_wc, _state, "Duck", next_pose);
+                getRobWorkStudio()->setState(_state);
+
+                getImage();
+
+                rw::common::Timer t;
+                t.resetAndResume();
+                cv::Mat proj_l, proj_r, cam_mat_l, cam_mat_r;
+                getCamerasInfo(proj_l, proj_r, cam_mat_l, cam_mat_r);
+                // get initial points
+                std::vector<cv::Mat> src_pnts_3d;
+                
+                getInitial3dPnts(proj_l, proj_r, src_pnts_3d, goal_point, noise_level);
+                // if (goal_point == rw::math::Vector3D<>(0, 0, 0)) {
+                //     std::cout << "Broke" << std::endl;
+                //     break;
+                // }
+                t.pause();
+                double time = t.getTime();
+                times.push_back(time);
+                rw::math::EuclideanMetric<rw::math::Vector3D<>> metric;
+                double dist = metric.distance(goal_point, next_pose.P());
+                dists.push_back(dist);
+                std::cout << "Time: " << time << "\ndist: " << dist << std::endl;
+            //}
+            //noise_level += 0.5;
+        //}
+
+        const std::string file_name = "sparse_stereo/duck_data.txt";
+        //save2File(file_name, dists, times);
+
+        std::cout << "This is the goal where the duck is: " << goal_point << std::endl;
+
+        //rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(WC_FILE);
+        //rw::kinematics::State state = wc->getDefaultState();
+        const std::string deviceName = "UR-6-85-5-A";
+        rw::models::SerialDevice::Ptr robot = _wc->findDevice<rw::models::SerialDevice>(deviceName);
+        //_device = _wc->findDevice<rw::models::SerialDevice>(deviceName);
+        //_state = _wc->getDefaultState();
+
+        rw::invkin::ClosedFormIKSolverUR ikinSolver(robot, _state);
+
+        rw::math::Transform3D<> desired_point(goal_point, rw::math::EAA<>(0,-2.5,-1.5).toRotation3D());
+
+        std::cout << "Desired point: " << desired_point << std::endl;
+
+        std::vector<rw::math::Q> test_point = ikinSolver.solve(desired_point,_state);
+
+        std::cout << "Inverse kin length: " << test_point.size() << std::endl;
+        std::cout << test_point[0] << std::endl;
+        
+
+        robot->setQ(test_point[0], _state);
+        getRobWorkStudio()->setState(_state);
+
     }
 }
 
@@ -324,4 +440,89 @@ void SamplePlugin::createPathRRTConnect(rw::math::Q from, rw::math::Q to,  doubl
         }
         _path = tempQ;
     }
+}
+/*
+void moveFrame(rw::models::WorkCell::Ptr &wc, rw::kinematics::State &state, const std::string &frameName, const Pose &newPose) {
+    std::cout << "Moving " << frameName << " to pose -->"
+              << "\nPosition: " << newPose.P()
+              << "\nRotation: " << newPose.R()
+              << std::endl;
+
+    // get frame
+    MovFrame *frame = wc->findFrame<MovFrame>(frameName);
+
+    // get current pose
+    std::cout << "\tOld pose -->"
+              << "\n\t\tPosition: " << frame->getTransform(state).P()
+              << "\n\t\tRotation: " << frame->getTransform(state).R()
+              << std::endl;
+
+    // move object
+    frame->moveTo(newPose, state);
+
+    // get current pose
+    std::cout << "\tNew pose -->"
+              << "\n\t\tPosition: " << frame->getTransform(state).P()
+              << "\n\t\tRotation: " << frame->getTransform(state).R()
+              << std::endl;
+}*/
+/*
+std::vector<Pose> loadRandomPoses() {
+    std::cout << "Loading random poses.." << std::endl;
+    std::vector<Pose> result = {
+        Pose( Vec(-0.145188, 0.443078, 0.13275), Rpy(90.655720, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.093862, 0.436711, 0.13275), Rpy(118.604228, 0, 0).toRotation3D() ),
+        Pose( Vec(0.122399, 0.495443, 0.13275), Rpy(170.850844, 0, 0).toRotation3D() ),
+        Pose( Vec(0.091337, 0.498684, 0.1327), Rpy(290.151910, 0, 0).toRotation3D() ),
+        Pose( Vec(0.264603, 0.418769, 0.13275), Rpy(298.242230, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.235944, 0.419935, 0.13275), Rpy(62.161712, 0, 0).toRotation3D() ),
+        Pose( Vec(0.135748, 0.504414, 0.13275), Rpy(10.789436, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.250770, 0.419906, 0.13275), Rpy(303.808868, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.200208, 0.488607, 0.13275), Rpy(184.357109, 0, 0).toRotation3D() ),
+        Pose( Vec(0.108419, 0.449887, 0.13275), Rpy(137.183094, 0, 0).toRotation3D() ),
+        Pose( Vec(0.217942, 0.460303, 0.13275), Rpy(224.500953, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.203439, 0.422350, 0.13275), Rpy(30.890149, 0, 0).toRotation3D() ),
+        Pose( Vec(0.205437, 0.440262, 0.13275), Rpy(306.213153, 0, 0).toRotation3D() ),
+        Pose( Vec(0.000940, 0.390936, 0.13275), Rpy(258.436252, 0, 0).toRotation3D() ),
+        Pose( Vec(0.011533, 0.466524, 0.13275), Rpy(39.489767, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.083706, 0.473673, 0.13275), Rpy(82.114563, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.215880, 0.460187, 0.13275), Rpy(299.988160, 0, 0).toRotation3D() ),
+        Pose( Vec(0.111775, 0.417223, 0.13275), Rpy(15.156711, 0, 0).toRotation3D() ),
+        Pose( Vec(0.286724, 0.451241, 0.13275), Rpy(109.719710, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.007980, 0.407581, 0.13275), Rpy(110.609545, 0, 0).toRotation3D() ),
+        Pose( Vec(0.142925, 0.431557, 0.13275), Rpy(134.673396, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.025873, 0.417860, 0.13275), Rpy(338.794893, 0, 0).toRotation3D() ),
+        Pose( Vec(0.260845, 0.376162, 0.13275), Rpy(183.421458, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.143089, 0.519847, 0.13275), Rpy(99.111381, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.190782, 0.508894, 0.13275), Rpy(252.283274, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.272231, 0.508522, 0.13275), Rpy(18.848865, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.289646, 0.426160, 0.13275), Rpy(103.919571, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.247180, 0.440277, 0.13275), Rpy(36.188349, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.213684, 0.408139, 0.13275), Rpy(117.088340, 0, 0).toRotation3D() ),
+        Pose( Vec(-0.241997, 0.445336, 0.13275), Rpy(357.345558, 0, 0).toRotation3D() )
+    };
+    return result;
+}*/
+
+void save2File(const std::string &filePath,
+               const std::vector<double> &dists,
+               const std::vector<double> &times) {
+    std::cout << "Writing data to file: " << filePath << std::endl;
+
+    // check for same vector size
+    if ( (times.size() != dists.size()) ) {
+        std::cerr << "Vectors do not have the same size!" << std::endl;
+        return;
+    }
+
+    // write to file
+    std::ofstream file;
+    file.open(filePath);
+    for (std::size_t i = 0; i < times.size(); i++) {
+        file << dists[i]      << " "
+             << times[i]     << "\n";
+             //<< diffAngle[i] << " "
+             //<< diffPos[i]   << "\n";
+    }
+    file.close();
 }
