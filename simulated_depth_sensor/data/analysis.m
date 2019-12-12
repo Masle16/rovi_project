@@ -105,7 +105,7 @@ format long
 load('data.txt');
 
 noise = data(:,1);
-times = data(:,2);
+times = data(:,2) / 1000;
 angles = data(:,3);
 positions = data(:,4);
 
@@ -113,20 +113,20 @@ positions = data(:,4);
 figure('name', 'Noise analysis')
 subplot(3,1,1)
 boxplot(times, noise)
-title('Noise as a function of time.')
-ylabel('Execution time[ms].')
+title('Time as a function of noise.')
+ylabel('Execution time [s].')
 xlabel('Standard deviation of normal distribution.')
 
 subplot(3,1,2)
 boxplot(angles, noise)
-title('Noise as a function of angle difference.')
-ylabel('Angle difference[Deg].')
+title('Angle difference as a function of noise.')
+ylabel('Angle difference [Deg].')
 xlabel('Standard deviation of normal distribution.')
 
 subplot(3,1,3)
 boxplot(positions, noise)
-title('Noise as a function of position difference.')
-ylabel('Position difference[m].')
+title('Position difference as a function of noise.')
+ylabel('Position difference [m].')
 xlabel('Standard deviation of normal distribution.')
 
 %% Descriptive statistics

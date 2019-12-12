@@ -1,25 +1,63 @@
 # Robotics and Vision, RoVi, Project
 
-7. semester rovi project.
+When running RobWorks plugins please be in the default folder(this one).
 
 ## Robotics
 
 ### Reachability Analysis
 
-The reachability analysis is located in [reachability_analysis](reachability_analysis), this folder contains the [code](reachability_analysis/src/main.cpp), the [dataprocessing of side](reachability_analysis/cylinder_side/collision_free_solutions_side.m), the [dataprocessing of top](reachability_analysis/cylinder_top/collision_free_solutions_top.m) and the [figures for the report](reachability_analysis/figures). Further description can be found in the [README](reachability_analysis/README.md).
+- The reachability analysis is located in [reachability_analysis](reachability_analysis).
+- The code is contained in [reachability_analysis/src/main.cpp](reachability_analysis/src/main.cpp).
+- The analysis of the grasping by the side in [reachability_analysis/cylinder_side/collision_free_solutions_side.m](reachability_analysis/cylinder_side/collision_free_solutions_side.m).
+- The grasping by the top [reachability_analysis/cylinder_top/collision_free_solutions_top.m](reachability_analysis/cylinder_top/collision_free_solutions_top.m).
+- The figures for the report [reachability_analysis/figures](reachability_analysis/figures).
+- Further description can be found in the [reachability_analysis/README.md](reachability_analysis/README.md).
 
 ### Robot Motion Planing
 
-**Point to Point Interpolation**
-
-**Point to Point Interpolation with Parabolic Blend**
+**Point to Point Interpolation & Point to Point Interpolation with Parabolic Blend**
 
 **Rapidly Random Trees Connect (RRT Connect)**
 
+- The RRT-Connect method is located in [rrt_connect](rrt_connect).
+- The code is located in [rrt_connect/src/main.cpp](rrt_connect/src/main.cpp).
+- The workcell for can be found in [rrt_connect/workcell](rrt_connect/workcell).
+- The dataprocessing is in [rrt_connect/analysis.m](rrt_connect/analysis.m).
+- The figures for the report are in [rrt_connect/figures](rrt_connect/figures).
+- Further information can be found in [rrt_connect/README.md](rrt_connect/README.md).
+
 ## Vision
 
-### Simulated Depth Sensor
+**Method 2: Simulated Depth Sensor**
 
-The simulated depth sensor method is located in [simulated_depth_sensor](simulated_depth_sensor), this folder contains the [code](simulated_depth_sensor/src/main.cpp), the [dataprocessing](simulated_depth_sensor/analysis_of_results.m) and the [figures for the report](simulated_depth_sensor/figures). Further description can be found in the [README](simulated_depth_sensor/README.md).
+- The simulated depth sensor method is located in [simulated_depth_sensor](simulated_depth_sensor).
+- The code is contained in [simulated_depth_sensor/sample_plugin/src](simulated_depth_sensor/sample_plugin/src). The code for the simulated depth sensor method is in alignment.hpp and other relevant functions are kept in util.hpp.
+- The workcell used can be found in [simulated_depth_sensor/workcell](simulated_depth_sensor/workcell).
+- The dataprocessing is located in [simulated_depth_sensor/analysis_of_results.m](simulated_depth_sensor/analysis_of_results.m).
+- The figures for the report are in [simulated_depth_sensor/figures](simulated_depth_sensor/figures).
+- Further description can be found in the [simulated_depth_sensor/README.md](simulated_depth_sensor/README.md).
+
+To run the sample plugin in RobWorks:
+
+- Open up RobWorks in this location.
+- Load the scene --> [simulated_depth_sensor/workcell/Scene.wc.xml](simulated_depth_sensor/workcell/Scene.wc.xml).
+- Load the plugin --> [simulated_depth_sensor/sample_plugin/libs/Release/libsimulated_depth_sensor_plugin.so](simulated_depth_sensor/sample_plugin/libs/Release/libsimulated_depth_sensor_plugin.so).
+
+**Method 3: Sparse Stereo**
 
 ## Combination
+
+- The combination of the robotics and vision is located in [combination](combination).
+- The code for the combination is located in [combination/sample_plugin/src](combination/sample_plugin/src). The vision.hpp contains code for the method 3: simulated depth sensor. The robotics.hpp contains the code for the point to point interpolation with parabolic blend. The util.hpp contains other relevant functions.
+- The workcell for the combination is located in [combination/workcell](combination/workcell).
+- The figures for the report are in [combination/figures](combination/figures).
+- A video showing the combination is at [combination/combination_video.webm](combination/combination_video.webm).
+- Further information is in the [combination/README.md](combination/README.md).
+
+To executed the generated sample plugin for RobWorks:
+
+- Open up RobWorks in this location.
+- Load the scene --> [combination/workcell/Scene.wc.xml](combination/workcell/Scene.wc.xml).
+- Load the plugin --> [combination/sample_plugin/libs/Release/libcombination_plugin.so](combination/sample_plugin/libs/Release/libcombination_plugin.so)
+
+When the sample plugin is loaded the combination be performed by first pressing the button: "Estimate object pose". Close the pcl_viewer window to continue. Then press the button: "Move robot to object". Afterwards, press the button: "Move object to goal". Then press the button: "Reset workcell" to reset. The button: "Move object random" generates a random pose for the object.
