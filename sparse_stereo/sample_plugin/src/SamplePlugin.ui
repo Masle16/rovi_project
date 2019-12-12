@@ -60,6 +60,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="_btn_touch_duck">
+        <property name="text">
+         <string>Touch duck</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QSpinBox" name="_spinBox"/>
       </item>
       <item>

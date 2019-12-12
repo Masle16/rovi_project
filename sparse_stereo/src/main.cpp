@@ -31,10 +31,6 @@ const std::string DEVICE_NAME = "UR-6-85-5-A";
 /*
  * FUNCTIONS
  */
-void getCamerasInfo(cv::Mat &proj_l, cv::Mat &proj_r, cv::Mat &cam_mat_l, cv::Mat &cam_mat_r);
-void findMatches(cv::Mat &src_l, cv::Mat &src_r, std::vector<cv::Point2f> &l2r, std::vector<cv::Point2f> &r2l, const bool showMatches=false);
-void getPose(const rw::models::WorkCell::Ptr &wc, const State &state, Pose &pose);
-void get3dPnts(const cv::Mat &proj_l, const cv::Mat &proj_r,std::vector<cv::Point3d> &pnts_3d);
 
 /*
  * MAIN ENTRY POINT
@@ -42,17 +38,29 @@ void get3dPnts(const cv::Mat &proj_l, const cv::Mat &proj_r,std::vector<cv::Poin
 int main(int argv, char** argc) {
     std::cout << "\nProgram started\n" << std::endl;
 
-    // get projection matrix
+    rw::models::WorkCell::Ptr wc = rw::loaders::WorkCellLoader::Factory::load(WC_FILE);
+    rw::kinematics::State state = wc->getDefaultState();
+
     cv::Mat proj_l, proj_r, cam_mat_l, cam_mat_r;
     getCamerasInfo(proj_l, proj_r, cam_mat_l, cam_mat_r);
 
-    // get 3d points
-    std::vector<cv::Point3d> src_pnts_3d;
-    get3dPnts(proj_l, proj_3, src_pnts_3d);
+
+
+    // get initial points
+    std::vector<cv::Mat> src_pnts_3d;
+    getInitial3dPnts(proj_l, proj_r, src_pnts_3d);
+
+    /*
 
     // get initial pose
     Pose src_pose;
-    getPose(src_pose);
+    getInitialPose(src_pose);
+
+    // get new points
+    std::vector<cv::Mat> new_pnts_3d;
+    getNew3dPnts(proj_l, proj_r, new_pnts_3d);
+
+    */
 
     std::cout << "\nProgram ended\n" << std::endl;
     cv::waitKey(0);
